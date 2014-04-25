@@ -64,10 +64,12 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
                 upd = "_update/insert_with_timestamp/" + line["id"]
                 
                 label = doc["execute"]
-                args = doc.get("arguments")
+                args = doc.get("arguments", [])
                 
-                if args: fd[label](args)
-                else: fd[label]()
+                if type(args) != type([]):
+                    raise Exception("'arguments' field must be a list")
+
+                retVal = fd[label](*args)
     
                 des.put(upd, params=_get_response("'%s' success" % label))
             except Exception, e:
