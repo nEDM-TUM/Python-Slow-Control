@@ -36,7 +36,7 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
        the DB. 
     """
  
-    def _get_response(msg):
+    def _get_response(msg, retVal=None):
         """
          _get_response returns a dictionary with a msg and a timestamp for
          insertion into the db 
@@ -44,7 +44,8 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
         import time as _ti 
         return { "response" : {
            "msg" : msg,
-           "timestamp" : _ti.strftime("%a, %d %b %Y %H:%M:%S +0000", _ti.gmtime())
+           "timestamp" : _ti.strftime("%a, %d %b %Y %H:%M:%S +0000", _ti.gmtime()),
+           "return" : retVal
           }
         }
  
@@ -71,7 +72,7 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
 
                 retVal = fd[label](*args)
     
-                des.put(upd, params=_get_response("'%s' success" % label))
+                des.put(upd, params=_get_response("'%s' success" % label, retVal))
             except Exception, e:
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass
