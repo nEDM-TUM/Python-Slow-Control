@@ -54,16 +54,14 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
         watching the change feed 
         """
    
-        import json as _js
         des = adb.design("nedm_default")
         for line in changes: 
-            if line == "" and _should_stop: break
-            if line == "": continue 
+            if line is None and _should_stop: break
+            if line is None: continue 
             try: 
-                ad = _js.loads(line)
-                doc = adb.get(ad["id"]).json()
+                doc = adb.get(line["id"]).json()
                 
-                upd = "_update/insert_with_timestamp/" + ad["id"]
+                upd = "_update/insert_with_timestamp/" + line["id"]
                 
                 label = doc["execute"]
                 args = doc.get("arguments")
@@ -114,9 +112,9 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
     change = db.changes(params=dict(feed='continuous',
                                     heartbeat=5000,
                                     since='now',
-                                    filter="execute_commands/execute_commands")
-                       ).iter_lines(chunk_size=1)
-
+                                    filter="execute_commands/execute_commands"),
+                        emit_heartbeats=True
+                       )
     _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, change, function_dict))
     _currentThread.start()
 
