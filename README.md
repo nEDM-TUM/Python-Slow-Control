@@ -49,8 +49,8 @@ document will become:
   "arguments" : [] # optional
   "response" : {
     "content" : "a msg",
-    "timestamp" : "a timestamp"
-    "return" : "Value returned by function" # can be NULL
+    "timestamp" : "a timestamp",
+    "return" : "Value returned by function", # can be NULL
     "ok" : True # only present if everything went ok
   }
   ...
