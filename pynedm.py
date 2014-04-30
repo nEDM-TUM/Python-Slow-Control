@@ -36,18 +36,19 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
        the DB. 
     """
  
-    def _get_response(msg, retVal=None):
+    def _get_response(msg, retVal=None, ok = False):
         """
          _get_response returns a dictionary with a msg and a timestamp for
          insertion into the db 
         """
         import time as _ti 
-        return { "response" : {
-           "msg" : msg,
+        ad = { "response" : {
+           "content" : msg,
            "timestamp" : _ti.strftime("%a, %d %b %Y %H:%M:%S +0000", _ti.gmtime()),
            "return" : retVal
           }
         }
+        if ok: ad["ok"] = True
  
     def _watch_changes_feed(adb, changes, fd):
         """
@@ -72,7 +73,7 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
 
                 retVal = fd[label](*args)
     
-                des.put(upd, params=_get_response("'%s' success" % label, retVal))
+                des.put(upd, params=_get_response("'%s' success" % label, retVal, True))
             except Exception, e:
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass

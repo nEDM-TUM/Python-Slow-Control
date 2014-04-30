@@ -48,8 +48,10 @@ document will become:
   "execute" : "do_work",
   "arguments" : [] # optional
   "response" : {
-    "msg" : "a msg",
+    "content" : "a msg",
     "timestamp" : "a timestamp"
+    "return" : "Value returned by function" # can be NULL
+    "ok" : True # only present if everything went ok
   }
   ...
 }
