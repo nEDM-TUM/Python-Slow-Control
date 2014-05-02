@@ -99,6 +99,12 @@ def listen(function_dict,database,username=None,
         for th in all_threads:
             while th.isAlive(): th.join(0.1)
 
+    # Handle interruption signals
+    def _builtin_sighandler(sig, frame):
+        stop_listening()
+    import signal
+    signal.signal(signal.SIGINT, _builtin_sighandler)
+
     # Now we start with the listen function
     global _currentThread
     import cloudant as _ca
