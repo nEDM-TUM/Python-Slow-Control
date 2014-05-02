@@ -59,4 +59,36 @@ document will become:
 
 Where the message will indicate if the command was successful.
 
+Stopping:
+	```pynedm.listening``` automatically adds a function "stop" to the set of
+functions it is listening for.  This means a document with an execute "stop"
+field will request the program to end.  From the command line, one may also
+type CTRL-C to nicely end the program. 
+
+Threading, etc:
+	Note, it is possible to send multiple messages and have them be executed
+"simultaneously". This means you should take care either in your function or
+when writing to the database if your command is thread sensitive (i.e. only one
+version should be running at a time). 
+
+Long functions:
+	pynedm begins listenings for further messages as soon as it executes the
+requested function.  This means it does not wait for the end of the function.
+This has the advantage that a long function can be halted if it takes a long
+time.  If your function takes a long time, you *should* build this into your
+system, using the following example: 
+
+```python
+    def takes_a_long_time(count=1):
+        import time
+        for i in range(count):
+            time.sleep(1)
+            print "Seen here: ", i
+            if should_stop(): break 
+        return "Completed %i of %i requested" % (i+1, count)
+
+    listen({ "long_time" : takes_a_long_time }, "test",
+           username="un", password="pw", verbose=True)
+    wait()
+```
 
