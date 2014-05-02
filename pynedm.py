@@ -61,6 +61,7 @@ def listen(function_dict,database,username=None,
         """
    
         des = adb.design("nedm_default")
+        if verbose: print "Waiting for command..."
         for line in changes: 
             if line is None and should_stop(): break
             if line is None: continue 
@@ -71,6 +72,7 @@ def listen(function_dict,database,username=None,
                 
                 label = doc["execute"]
                 args = doc.get("arguments", [])
+                if verbose: print "    command (%s) received" % label
                 
                 if type(args) != type([]):
                     raise Exception("'arguments' field must be a list")
@@ -81,6 +83,7 @@ def listen(function_dict,database,username=None,
             except Exception, e:
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass
+            if verbose: print "Waiting for command..."
 
 
     # Now we start with the listen function
@@ -102,6 +105,8 @@ def listen(function_dict,database,username=None,
     document = { "_id" : "commands", 
                  "keys" : dict([(k,"") for k in function_dict.keys()]) } 
   
+    if verbose:
+        print "Tracking the following commands: \n" + '\n   '.join(function_dict.keys())
 
     r = db.get("commands") 
     des = db.design("nedm_default")
