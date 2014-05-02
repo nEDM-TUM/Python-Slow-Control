@@ -53,6 +53,7 @@ def listen(function_dict,database,username=None,
           }
         }
         if ok: ad["ok"] = True
+        return ad
  
     def _watch_changes_feed(adb, changes, fd):
         """
