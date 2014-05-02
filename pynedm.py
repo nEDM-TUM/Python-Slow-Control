@@ -1,4 +1,4 @@
-__all__ = [ "wait", "stop_listening", "listen" ]
+__all__ = [ "wait", "stop_listening", "listen", "should_stop" ]
 
 # Global to stop 
 _should_stop = False
@@ -21,7 +21,11 @@ def stop_listening():
     print "Stop Requested"
     _should_stop = True
 
-def listen(function_dict,database,username=None,password=None, uri="http://localhost:5984"): 
+def should_stop():
+    return _should_stop
+
+def listen(function_dict,database,username=None,
+           password=None, uri="http://localhost:5984", verbose=False): 
     """
      function_dict should look like the following:
 
@@ -58,7 +62,7 @@ def listen(function_dict,database,username=None,password=None, uri="http://local
    
         des = adb.design("nedm_default")
         for line in changes: 
-            if line is None and _should_stop: break
+            if line is None and should_stop(): break
             if line is None: continue 
             try: 
                 doc = adb.get(line["id"]).json()
