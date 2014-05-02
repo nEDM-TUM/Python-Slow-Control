@@ -61,6 +61,16 @@ def listen(function_dict,database,username=None,
         watching the change feed 
         """
    
+        import threading as _th
+        def _fire_single_thread(des, fd, label, args):
+            try:
+                retVal = fd[label](*args)
+                des.put(upd, params=_get_response("'%s' success" % label, retVal, True))
+            except Exception, e:
+                des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
+                pass
+
+        all_threads = []
         des = adb.design("nedm_default")
         if verbose: print "Waiting for command..."
         for line in changes: 
@@ -78,14 +88,16 @@ def listen(function_dict,database,username=None,
                 if type(args) != type([]):
                     raise Exception("'arguments' field must be a list")
 
-                retVal = fd[label](*args)
-    
-                des.put(upd, params=_get_response("'%s' success" % label, retVal, True))
+                new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
+                new_th.start()
+                all_threads.append(new_th)
             except Exception, e:
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass
             if verbose: print "Waiting for command..."
 
+        for th in all_threads:
+            while th.isAlive(): th.join(0.1)
 
     # Now we start with the listen function
     global _currentThread
