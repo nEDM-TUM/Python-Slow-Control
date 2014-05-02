@@ -16,7 +16,7 @@ def do_work:
     ...
 
 execute_dict = {
-    "do_work" : "",
+    "do_work_key" : do_work,
 }
 pynedm.listen(execute_dict, "name_of_database", 
               username="un", password="pw", uri="http://raid.nedm1:5984")  
@@ -31,7 +31,7 @@ The above will wait and listen for documents that look like:
 {
   ...
   "type" : "command",
-  "execute" : "do_work",
+  "execute" : "do_work_key",
   "arguments" : [] # optional
   ...
 }
@@ -45,8 +45,8 @@ document will become:
 {
   ...
   "type" : "command",
-  "execute" : "do_work",
-  "arguments" : [] # optional
+  "execute" : "do_work_key",
+  "arguments" : [], # optional
   "response" : {
     "content" : "a msg",
     "timestamp" : "a timestamp",
