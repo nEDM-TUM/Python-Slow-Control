@@ -52,7 +52,7 @@ def listen(function_dict,database,username=None,
            "return" : retVal
           }
         }
-        if ok: ad["ok"] = True
+        if ok: ad["response"]["ok"] = True
         return ad
  
     def _watch_changes_feed(adb, changes, fd):
