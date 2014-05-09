@@ -1,8 +1,21 @@
-__all__ = [ "wait", "stop_listening", "listen", "should_stop" ]
+__all__ = [ "wait", "stop_listening", "listen", "should_stop", "start_process" ]
 
 # Global to stop 
 _should_stop = False
 _currentThread = None
+
+def start_process(func, *args, **kwargs):
+    import Queue as _q
+    import threading as _th
+    def wrap_f(q, *args, **kwargs):
+        ret = func(*args, **kwargs)
+        q.put(ret)
+
+    q = _q.Queue()
+    t = _th.Thread(target=wrap_f, args=(q,)+args, kwargs=kwargs)
+    t.start()
+    t.result = q
+    return t
 
 def wait():
     """
