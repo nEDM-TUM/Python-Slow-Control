@@ -10,7 +10,7 @@ def wait():
     be stopped also by calling stop_listening() 
     """
     if not _currentThread: return
-    while _currentThread.isAlive(): _currentThread.join(0.5)
+    while _currentThread.isAlive(): _currentThread.join(0.1)
 
 
 def stop_listening():
