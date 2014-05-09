@@ -73,22 +73,10 @@ version should be running at a time).
 
 Long functions:
 	pynedm begins listenings for further messages as soon as it executes the
-requested function.  This means it does not wait for the end of the function.
-This has the advantage that a long function can be halted if it takes a long
-time.  If your function takes a long time, you *should* build this into your
-system, using the following example: 
+requested function.  This means it does not wait for the end of the function,
+but it is important that the function returns a value relatively quickly so
+that the web control doesn't time out.  There is an example of how to handle
+this in:
 
-```python
-    def takes_a_long_time(count=1):
-        import time
-        for i in range(count):
-            time.sleep(1)
-            print "Seen here: ", i
-            if should_stop(): break 
-        return "Completed %i of %i requested" % (i+1, count)
-
-    listen({ "long_time" : takes_a_long_time }, "test",
-           username="un", password="pw", verbose=True)
-    wait()
-```
+examples/long_run_process.py
 
