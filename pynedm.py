@@ -83,8 +83,27 @@ def listen(function_dict,database,username=None,
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass
 
+        def _heartbeat_thread(adb):
+            import time as _ti
+            des = adb.design("nedm_default")
+            adoc = { "type" : "heartbeat" }
+            i = 0
+            while not should_stop():
+                if i == 0:
+                    des.post("_update/insert_with_timestamp", params=adoc)
+                i += 1
+                i %= 10
+                _ti.sleep(1)
+
         all_threads = []
+
         des = adb.design("nedm_default")
+        # Start Heartbeat thread
+        heartbeat = _th.Thread(target=_heartbeat_thread, args=(adb,))
+        heartbeat.start()
+        all_threads.append(heartbeat)
+        ####
+
         if verbose: print "Waiting for command..."
         for line in changes: 
             if line is None and should_stop(): break
