@@ -87,13 +87,12 @@ def listen(function_dict,database,username=None,
             import time as _ti
             des = adb.design("nedm_default")
             adoc = { "type" : "heartbeat" }
-            i = 0
+            now = _ti.time() 
             while not should_stop():
-                if i == 0:
+                if _ti.time() - now >= 10:
+                    now = _ti.time()
                     des.post("_update/insert_with_timestamp", params=adoc)
-                i += 1
-                i %= 10
-                _ti.sleep(1)
+                _ti.sleep(0.1)
 
         all_threads = []
 
