@@ -7,7 +7,13 @@ database.
 Currently, one can define functions that can be exported to the Web interface
 and then executed in your program.  
 
-Example usage:
+# Install:
+
+```
+[sudo] pip install git+https://github.com/nEDM-TUM/Python-Slow-Control#egg=pynedm
+```
+
+# Example usage:
 
 ```python
 import pynedm
