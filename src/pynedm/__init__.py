@@ -1,8 +1,9 @@
-__all__ = [ "wait", "stop_listening", "listen", "should_stop", "start_process" ]
+__all__ = [ "wait", "stop_listening", "listen", "should_stop", "start_process", "write_document_to_db" ]
 
 # Global to stop 
 _should_stop = False
 _currentThread = None
+_currentInfo = {}
 
 def start_process(func, *args, **kwargs):
     import Queue as _q
@@ -24,6 +25,13 @@ def wait():
     """
     if not _currentThread: return
     while _currentThread.isAlive(): _currentThread.join(0.1)
+
+def write_document_to_db(adoc):
+    try:
+      db = _currentInfo['db']
+    except:
+      raise Exception("Cannot write while not listening")
+    db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc)
 
 
 def stop_listening():
@@ -137,7 +145,7 @@ def listen(function_dict,database,username=None,
     signal.signal(signal.SIGINT, _builtin_sighandler)
 
     # Now we start with the listen function
-    global _currentThread
+    global _currentThread, _currentInfo
     import cloudant as _ca
     import threading as _th
 
@@ -147,6 +155,8 @@ def listen(function_dict,database,username=None,
         res = acct.login(username, password)
         assert res.status_code == 200
     db = acct[database]
+    _currentInfo['db'] = db
+    _currentInfo['acct'] = acct
 
     # Introduce stop command
     function_dict["stop"] = stop_listening
