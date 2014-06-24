@@ -25,14 +25,22 @@ or (for those installing without git on their systems)
 import pynedm
 
 def do_work:
+    """
+      do some work, can also write a document to the (current) db
+    """
+    pynedm.write_document_to_db({ "type" : "data",
+                                 "value" : { "myvar" : 0 } })
     ...
 
 execute_dict = {
     "do_work_key" : do_work,
 }
+
+# listen for commands listed in execute_dict
 pynedm.listen(execute_dict, "name_of_database", 
               username="un", password="pw", uri="http://raid.nedm1:5984")  
 
+# Wait until listening ends
 pynedm.wait()
 
 ```
