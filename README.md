@@ -13,6 +13,12 @@ and then executed in your program.
 [sudo] pip install [--upgrade] git+https://github.com/nEDM-TUM/Python-Slow-Control#egg=pynedm
 ```
 
+or (for those installing without git on their systems)
+
+```
+[sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+```
+
 # Example usage:
 
 ```python
