@@ -145,7 +145,10 @@ def listen(function_dict,database,username=None,
     def _builtin_sighandler(sig, frame):
         stop_listening()
     import signal
-    signal.signal(signal.SIGINT, _builtin_sighandler)
+    try:
+        signal.signal(signal.SIGINT, _builtin_sighandler)
+    except ValueError:
+        _log("Not handling signals")
 
     # Now we start with the listen function
     global _currentThread, _currentInfo
