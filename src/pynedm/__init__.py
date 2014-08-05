@@ -5,6 +5,9 @@ _should_stop = False
 _currentThread = None
 _currentInfo = {}
 
+def _log(*args):
+    print *args
+
 def start_process(func, *args, **kwargs):
     import Queue as _q
     import threading as _th
@@ -39,7 +42,7 @@ def stop_listening():
     Request the listening to stop.  Code blocked on wait() will proceed.
     """
     global _should_stop
-    print "Stop Requested"
+    _log("Stop Requested")
     _should_stop = True
 
 def should_stop():
@@ -111,7 +114,7 @@ def listen(function_dict,database,username=None,
         all_threads.append(heartbeat)
         ####
 
-        if verbose: print "Waiting for command..."
+        if verbose: _log("Waiting for command...")
         for line in changes: 
             if line is None and should_stop(): break
             if line is None: continue 
@@ -122,7 +125,7 @@ def listen(function_dict,database,username=None,
                 
                 label = doc["execute"]
                 args = doc.get("arguments", [])
-                if verbose: print "    command (%s) received" % label
+                if verbose: _log("    command (%s) received" % label)
                 
                 if type(args) != type([]):
                     raise Exception("'arguments' field must be a list")
@@ -133,7 +136,7 @@ def listen(function_dict,database,username=None,
             except Exception, e:
                 des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                 pass
-            if verbose: print "Waiting for command..."
+            if verbose: _log("Waiting for command...")
 
         for th in all_threads:
             while th.isAlive(): th.join(0.1)
@@ -166,7 +169,7 @@ def listen(function_dict,database,username=None,
                  "keys" : dict([(k,"") for k in function_dict.keys()]) } 
   
     if verbose:
-        print "Tracking the following commands: \n" + '\n   '.join(function_dict.keys())
+        _log("Tracking the following commands: \n" + '\n   '.join(function_dict.keys()))
 
     r = db.get("commands") 
     des = db.design("nedm_default")
