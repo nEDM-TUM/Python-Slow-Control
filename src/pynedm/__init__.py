@@ -37,13 +37,13 @@ def write_document_to_db(adoc):
     db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc)
 
 
-def stop_listening():
+def stop_listening(stop=True):
     """
     Request the listening to stop.  Code blocked on wait() will proceed.
     """
     global _should_stop
-    _log("Stop Requested")
-    _should_stop = True
+    if stop: _log("Stop Requested")
+    _should_stop = stop
 
 def should_stop():
     return _should_stop
@@ -64,6 +64,8 @@ def listen(function_dict,database,username=None,
        the DB. 
     """
  
+    # Reset any stop listening flags
+    stop_listening(False)
     def _get_response(msg, retVal=None, ok = False):
         """
          _get_response returns a dictionary with a msg and a timestamp for
