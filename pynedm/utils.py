@@ -1,5 +1,3 @@
-__all__ = [ "wait", "stop_listening", "listen", "should_stop", "start_process", "write_document_to_db" ]
-
 # Global to stop 
 _should_stop = False
 _currentThread = None
