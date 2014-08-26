@@ -81,13 +81,14 @@ def listen(function_dict,database,username=None,
         if ok: ad["response"]["ok"] = True
         return ad
  
-    def _watch_changes_feed(adb, changes, fd):
+    def _watch_changes_feed(adb, fd):
         """
 	_watch_changes_feed is a hidden function that performs all the work
         watching the change feed 
         """
    
         import threading as _th
+        import requests as _req
         def _fire_single_thread(des, fd, label, args):
             try:
                 retVal = fd[label](*args)
@@ -117,28 +118,41 @@ def listen(function_dict,database,username=None,
         ####
 
         if verbose: _log("Waiting for command...")
-        for line in changes: 
-            if line is None and should_stop(): break
-            if line is None: continue 
-            try: 
-                doc = adb.get(line["id"]).json()
+        while 1:
+            try:
+                # Get changes feed and begin thread
+                changes = adb.changes(params=dict(feed='continuous',
+                                                  heartbeat=5000,
+                                                  since='now',
+                                                  filter="execute_commands/execute_commands"),
+                                    emit_heartbeats=True
+                                   )
+                for line in changes:
+                    if line is None and should_stop(): break
+                    if line is None: continue
+                    try: 
+                        doc = adb.get(line["id"]).json()
+                        
+                        upd = "_update/insert_with_timestamp/" + line["id"]
+                        
+                        label = doc["execute"]
+                        args = doc.get("arguments", [])
+                        if verbose: _log("    command (%s) received" % label)
+                        
+                        if type(args) != type([]):
+                            raise Exception("'arguments' field must be a list")
                 
-                upd = "_update/insert_with_timestamp/" + line["id"]
-                
-                label = doc["execute"]
-                args = doc.get("arguments", [])
-                if verbose: _log("    command (%s) received" % label)
-                
-                if type(args) != type([]):
-                    raise Exception("'arguments' field must be a list")
-
-                new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
-                new_th.start()
-                all_threads.append(new_th)
-            except Exception, e:
-                des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
+                        new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
+                        new_th.start()
+                        all_threads.append(new_th)
+                    except Exception, e:
+                        des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
+                        pass
+                    if verbose: _log("Waiting for command...")
+                break  
+            except _req.exceptions.ChunkedEncodingError:
+                # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
                 pass
-            if verbose: _log("Waiting for command...")
 
         for th in all_threads:
             while th.isAlive(): th.join(0.1)
@@ -189,14 +203,7 @@ def listen(function_dict,database,username=None,
     r = func(location,params=document)
     assert("ok" in r.json())
     
-    # Get changes feed and begin thread
-    change = db.changes(params=dict(feed='continuous',
-                                    heartbeat=5000,
-                                    since='now',
-                                    filter="execute_commands/execute_commands"),
-                        emit_heartbeats=True
-                       )
-    _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, change, function_dict))
+    _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, function_dict))
     _currentThread.start()
 
 
