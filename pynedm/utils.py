@@ -25,7 +25,9 @@ def wait():
     be stopped also by calling stop_listening()
     """
     if not _currentThread: return
-    while _currentThread.isAlive(): _currentThread.join(0.1)
+    th = _currentThread["thread"]
+    while th.isAlive(): th.join(0.1)
+    _currentThread["cleanup"]()
 
 def write_document_to_db(adoc):
     try:
@@ -193,7 +195,6 @@ def listen(function_dict,database,username=None,
     import threading as _th
     import inspect as _ins
     import pydoc as _pyd
-    import atexit as _ate
     import uuid as _uuid
 
     # Get the database information
@@ -274,9 +275,10 @@ Call 'listen' with 'force=True' to force removal of 'commands' document.
             pass
 
 
-    _ate.register(remove_commands_doc_at_exit)
-
-    _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy))
-    _currentThread.start()
+    _currentThread = {
+      "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy)),
+      "cleanup" : remove_commands_doc_at_exit
+    } 
+    _currentThread["thread"].start()
 
 
