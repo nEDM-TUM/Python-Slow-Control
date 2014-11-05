@@ -1,4 +1,4 @@
-# Global to stop 
+# Global to stop
 _should_stop = False
 _currentThread = None
 _currentInfo = {}
@@ -22,7 +22,7 @@ def start_process(func, *args, **kwargs):
 def wait():
     """
     Wait until the current changes feed execution is complete.  Execution can
-    be stopped also by calling stop_listening() 
+    be stopped also by calling stop_listening()
     """
     if not _currentThread: return
     while _currentThread.isAlive(): _currentThread.join(0.1)
@@ -57,18 +57,25 @@ def listen(function_dict,database,username=None,
           "func_name2" : func2,
        }
 
+       *or*, if explicitly passing in documentation strings
+
+       adict = {
+          "func_name1" : (func1, "my doc string"),
+          "func_name2" : (func2, "my doc string for func2")
+       }
+
        where of course the names can be more creative and func1/2 should be
        actually references to functions.  A special key "stop" will be inserted
        to ensure that the changes feed listening may be stopped by documents in
-       the DB. 
+       the DB.
     """
- 
+
     # Reset any stop listening flags
     stop_listening(False)
     def _get_response(msg, retVal=None, ok = False):
         """
          _get_response returns a dictionary with a msg and a timestamp for
-         insertion into the db 
+         insertion into the db
         """
         import time as _ti 
         ad = { "response" : {
@@ -79,15 +86,16 @@ def listen(function_dict,database,username=None,
         }
         if ok: ad["response"]["ok"] = True
         return ad
- 
+
     def _watch_changes_feed(adb, fd):
         """
 	_watch_changes_feed is a hidden function that performs all the work
-        watching the change feed 
+        watching the change feed
         """
-   
+
         import threading as _th
         import requests as _req
+
         def _fire_single_thread(des, fd, label, args):
             try:
                 retVal = fd[label](*args)
@@ -100,7 +108,7 @@ def listen(function_dict,database,username=None,
             import time as _ti
             des = adb.design("nedm_default")
             adoc = { "type" : "heartbeat" }
-            now = _ti.time() 
+            now = _ti.time()
             while not should_stop():
                 if _ti.time() - now >= 10:
                     now = _ti.time()
