@@ -72,6 +72,7 @@ def listen(function_dict,database,username=None,
 
     # Reset any stop listening flags
     import time as _ti
+    import requests as _req
     stop_listening(False)
     def _get_response(msg, retVal=None, ok = False):
         """
@@ -94,7 +95,6 @@ def listen(function_dict,database,username=None,
         """
 
         import threading as _th
-        import requests as _req
 
         def _fire_single_thread(des, fd, label, args):
             try:
