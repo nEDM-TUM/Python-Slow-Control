@@ -126,6 +126,7 @@ def listen(function_dict,database,username=None,
         all_threads.append(heartbeat)
         ####
 
+        connection_error = 0
         if verbose: _log("Waiting for command...")
         while 1:
             try:
@@ -163,6 +164,16 @@ def listen(function_dict,database,username=None,
             except _req.exceptions.ChunkedEncodingError:
                 # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
                 pass
+            except _req.exceptions.ConnectionError:
+                if connection_error >= 4:
+                  _log("Seen too many connection errors, exiting")
+                  break
+                connection_error += 1
+                _ti.sleep(1)
+                pass
+
+        if not should_stop():
+            stop_listening()
 
         for th in all_threads:
             while th.isAlive(): th.join(0.1)
