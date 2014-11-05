@@ -71,13 +71,13 @@ def listen(function_dict,database,username=None,
     """
 
     # Reset any stop listening flags
+    import time as _ti
     stop_listening(False)
     def _get_response(msg, retVal=None, ok = False):
         """
          _get_response returns a dictionary with a msg and a timestamp for
          insertion into the db
         """
-        import time as _ti 
         ad = { "response" : {
            "content" : msg,
            "timestamp" : _ti.strftime("%a, %d %b %Y %H:%M:%S +0000", _ti.gmtime()),
@@ -105,7 +105,6 @@ def listen(function_dict,database,username=None,
                 pass
 
         def _heartbeat_thread(adb):
-            import time as _ti
             des = adb.design("nedm_default")
             adoc = { "type" : "heartbeat" }
             now = _ti.time()
