@@ -4,7 +4,7 @@ _currentThread = None
 _currentInfo = {}
 
 def _log(*args):
-    print str(args)
+    print str(*args)
 
 def start_process(func, *args, **kwargs):
     import Queue as _q
