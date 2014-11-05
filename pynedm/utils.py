@@ -111,7 +111,10 @@ def listen(function_dict,database,username=None,
             while not should_stop():
                 if _ti.time() - now >= 10:
                     now = _ti.time()
-                    des.post("_update/insert_with_timestamp", params=adoc)
+                    try:
+                        des.post("_update/insert_with_timestamp/heartbeat", params=adoc)
+                    except:
+                        des = adb.design("nedm_default")
                 _ti.sleep(0.1)
 
         all_threads = []
