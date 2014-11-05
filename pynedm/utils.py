@@ -133,32 +133,33 @@ def listen(function_dict,database,username=None,
                 changes = adb.changes(params=dict(feed='continuous',
                                                   heartbeat=5000,
                                                   since='now',
+                                                  include_docs=True,
                                                   filter="execute_commands/execute_commands"),
                                     emit_heartbeats=True
                                    )
                 for line in changes:
                     if line is None and should_stop(): break
                     if line is None: continue
-                    try: 
-                        doc = adb.get(line["id"]).json()
-                        
+                    try:
+                        doc = line["doc"]
+
                         upd = "_update/insert_with_timestamp/" + line["id"]
-                        
+
                         label = doc["execute"]
                         args = doc.get("arguments", [])
                         if verbose: _log("    command (%s) received" % label)
-                        
+
                         if type(args) != type([]):
                             raise Exception("'arguments' field must be a list")
-                
+
                         new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
                         new_th.start()
                         all_threads.append(new_th)
                     except Exception, e:
                         des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
                         pass
-                    if verbose: _log("Waiting for command...")
-                break  
+                    if verbose: _log("Waiting for next command...")
+                break
             except _req.exceptions.ChunkedEncodingError:
                 # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
                 pass
