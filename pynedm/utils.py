@@ -261,7 +261,8 @@ Call 'listen' with 'force=True' to force removal of 'commands' document.
         del document["_id"]
 
     r = func(location,params=document)
-    assert("ok" in r.json())
+    if not "ok" in r.json():
+        raise Exception("Error seen: " + str(r.json()))
 
     def remove_commands_doc_at_exit():
         try:
