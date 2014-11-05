@@ -47,7 +47,8 @@ def should_stop():
     return _should_stop
 
 def listen(function_dict,database,username=None,
-           password=None, uri="http://localhost:5984", verbose=False): 
+           password=None, uri="http://localhost:5984", verbose=False,
+           force=False):
     """
      function_dict should look like the following:
 
@@ -168,6 +169,10 @@ def listen(function_dict,database,username=None,
     global _currentThread, _currentInfo
     import cloudant as _ca
     import threading as _th
+    import inspect as _ins
+    import pydoc as _pyd
+    import atexit as _ate
+    import uuid as _uuid
 
     # Get the database information
     acct = _ca.Account(uri=uri)
@@ -180,28 +185,75 @@ def listen(function_dict,database,username=None,
 
     # Introduce stop command
     function_dict["stop"] = stop_listening
+    # build_dictionary
+    document = { "_id" : "commands",
+                 "uuid" : _uuid.getnode(),
+                 "keys" : {} }
 
-    # build_dictionary 
-    document = { "_id" : "commands", 
-                 "keys" : dict([(k,"") for k in function_dict.keys()]) } 
-  
+    # Copy function dictionary
+    func_dic_copy = function_dict.copy()
+    for k in function_dict:
+        o = function_dict[k]
+        exp_dic = {}
+        if _ins.isfunction(o):
+            # If we just have a function, use the doc string
+            exp_dic = dict(Info=_pyd.plain(_pyd.text.document(o, k)))
+        else:
+            exp_dic = dict(Info=o[1])
+            func_dic_copy[k] = o[0]
+        document["keys"][k] = exp_dic
+
+
     if verbose:
         _log("Tracking the following commands: \n" + '\n   '.join(function_dict.keys()))
 
-    r = db.get("commands") 
+    r = db.get("commands")
     des = db.design("nedm_default")
 
     func = des.post
     location = "_update/insert_with_timestamp"
-    if "error" not in r.json():
+    outp = r.json()
+    if "error" not in outp:
+        msg = """
+**********************************
+'commands' document already exists.
+"""
+        if _uuid.getnode() != outp.get("uuid"):
+            msg += """    uuid (%s) does not match this uuid (%s).
+    Ensure no other program is running on another machine!""" % (str(outp.get("uuid")), str(_uuid.getnode()))
+        else:
+            msg += """    Ensure no other program is running on this machine"""
+        msg += """
+**********************************
+"""
+        _log(msg)
+        if not force:
+            _log("""
+**********************************
+Call 'listen' with 'force=True' to force removal of 'commands' document.
+**********************************
+""")
+            raise Exception("'commands' document present")
         func = des.put
         location += "/commands"
         del document["_id"]
 
     r = func(location,params=document)
     assert("ok" in r.json())
-    
-    _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, function_dict))
+
+    def remove_commands_doc_at_exit():
+        try:
+            doc = db.document("commands")
+            outp = doc.get().json()
+            doc.delete(outp["_rev"]).raise_for_status()
+        except _req.exceptions.ConnectionError:
+            _log("Error removing document, did the server die?")
+            pass
+
+
+    _ate.register(remove_commands_doc_at_exit)
+
+    _currentThread = _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy))
     _currentThread.start()
 
 
