@@ -47,13 +47,13 @@ pynedm.wait()
 
 The above will wait and listen for documents that look like: 
 
-```json 
+```javascript
 {
-  ...
+  // ...
   "type" : "command",
   "execute" : "do_work_key",
-  "arguments" : [] # optional
-  ...
+  "arguments" : [] // optional
+  // ...
 }
 ```
 to be inserted into the database.  As soon as it sees a document with a
@@ -61,19 +61,19 @@ valid key in "execute", it will run the associated function and return a
 success message back to the inserted document.  In other words, the above
 document will become:
 
-```json 
+```javascript 
 {
-  ...
+  // ...
   "type" : "command",
   "execute" : "do_work_key",
-  "arguments" : [], # optional
+  "arguments" : [], // optional
   "response" : {
     "content" : "a msg",
     "timestamp" : "a timestamp",
     "return" : "Value returned by function", # can be NULL
     "ok" : True # only present if everything went ok
   }
-  ...
+  // ...
 }
 ```
 
