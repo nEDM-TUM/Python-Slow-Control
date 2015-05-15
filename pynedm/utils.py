@@ -216,7 +216,7 @@ def listen(function_dict,database,username=None,
 
     # Get the database information
     set_account(uri, username, password)
-    db = _currentInfo['acct']
+    db = _currentInfo['acct'][database]
     _currentInfo['db'] = db
 
     # Introduce stop command
