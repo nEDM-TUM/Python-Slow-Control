@@ -1,19 +1,38 @@
 # Global to stop
 _should_stop = False
 _currentThread = None
-_currentInfo = {}
+
+class ProcessObject(object):
+    def __init__(self, uri, username, password, adb=None):
+        import cloudant as _ca
+        acct = _ca.Account(uri=uri)
+        if username and password:
+            res = acct.login(username, password)
+            assert res.status_code == 200
+        self.acct = acct
+        self.db = adb
+
+    def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
+        try:
+          if db is None:
+            db = self.db
+          else:
+            db = self.acct[db]
+        except:
+          raise Exception("Cannot write while not listening")
+        try:
+          return db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc).json()
+        except Exception as e:
+          if ignoreErrors:
+            _log("Exception ({}) when posting doc({})".format(e,adoc))
+            return {}
+            pass
+          else: raise
+
+
 
 def _log(*args):
     print str(*args)
-
-def set_account(uri, username, password):
-    import cloudant as _ca
-    global _currentInfo
-    acct = _ca.Account(uri=uri)
-    if username and password:
-        res = acct.login(username, password)
-        assert res.status_code == 200
-    _currentInfo['acct'] = acct
 
 def start_process(func, *args, **kwargs):
     import Queue as _q
@@ -38,28 +57,13 @@ def wait():
     while th.isAlive(): th.join(0.1)
     _currentThread["cleanup"]()
 
-def write_document_to_db(adoc, db=None, ignoreErrors=True):
-    try:
-      if db is None:
-        db = _currentInfo['db']
-      else:
-        db = _currentInfo['acct'][db]
-    except:
-      raise Exception("Cannot write while not listening")
-    try:
-      return db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc).json()
-    except Exception as e:
-      if ignoreErrors:
-        _log("Exception ({}) when posting doc({})".format(e,adoc))
-        return {}
-        pass
-      else: raise
-
 def stop_listening(stop=True):
     """
     Request the listening to stop.  Code blocked on wait() will proceed.
     """
     global _should_stop
+    if not type(stop) == type(True):
+      raise Exception("Expected bool, received (%s)" % type(stop))
     if stop: _log("Stop Requested")
     _should_stop = stop
 
@@ -208,16 +212,15 @@ def listen(function_dict,database,username=None,
         _log("Not handling signals")
 
     # Now we start with the listen function
-    global _currentThread, _currentInfo
+    global _currentThread
     import threading as _th
     import inspect as _ins
     import pydoc as _pyd
     import uuid as _uuid
 
     # Get the database information
-    set_account(uri, username, password)
-    db = _currentInfo['acct'][database]
-    _currentInfo['db'] = db
+    process_object = ProcessObject(uri, username, password, database)
+    db = process_object.acct[database]
 
     # Introduce stop command
     function_dict["stop"] = stop_listening
@@ -294,7 +297,7 @@ Call 'listen' with 'force=True' to force removal of 'commands' document.
     _currentThread = {
       "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy)),
       "cleanup" : remove_commands_doc_at_exit
-    } 
+    }
     _currentThread["thread"].start()
 
 
