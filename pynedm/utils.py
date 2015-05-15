@@ -38,13 +38,21 @@ def wait():
     while th.isAlive(): th.join(0.1)
     _currentThread["cleanup"]()
 
-def write_document_to_db(adoc):
+def write_document_to_db(adoc, db=None, ignoreErrors=True):
     try:
-      db = _currentInfo['db']
+      if db is None:
+        db = _currentInfo['db']
+      else:
+        db = _currentInfo['acct'][db]
     except:
       raise Exception("Cannot write while not listening")
-    db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc)
-
+    try:
+      db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc)
+    except Exception as e:
+      if ignoreErrors:
+        _log("Exception ({}) when posting doc({})".format(e,adoc))
+        pass
+      else: raise
 
 def stop_listening(stop=True):
     """
