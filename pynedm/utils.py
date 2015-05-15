@@ -47,10 +47,11 @@ def write_document_to_db(adoc, db=None, ignoreErrors=True):
     except:
       raise Exception("Cannot write while not listening")
     try:
-      db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc)
+      return db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc).json()
     except Exception as e:
       if ignoreErrors:
         _log("Exception ({}) when posting doc({})".format(e,adoc))
+        return {}
         pass
       else: raise
 
