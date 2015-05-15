@@ -6,6 +6,15 @@ _currentInfo = {}
 def _log(*args):
     print str(*args)
 
+def set_account(uri, username, password):
+    import cloudant as _ca
+    global _currentInfo
+    acct = _ca.Account(uri=uri)
+    if username and password:
+        res = acct.login(username, password)
+        assert res.status_code == 200
+    _currentInfo['acct'] = acct
+
 def start_process(func, *args, **kwargs):
     import Queue as _q
     import threading as _th
@@ -191,20 +200,15 @@ def listen(function_dict,database,username=None,
 
     # Now we start with the listen function
     global _currentThread, _currentInfo
-    import cloudant as _ca
     import threading as _th
     import inspect as _ins
     import pydoc as _pyd
     import uuid as _uuid
 
     # Get the database information
-    acct = _ca.Account(uri=uri)
-    if username and password:
-        res = acct.login(username, password)
-        assert res.status_code == 200
-    db = acct[database]
+    set_account(uri, username, password)
+    db = _currentInfo['acct']
     _currentInfo['db'] = db
-    _currentInfo['acct'] = acct
 
     # Introduce stop command
     function_dict["stop"] = stop_listening
