@@ -286,6 +286,9 @@ Call 'listen' with 'force=True' to force removal of 'commands' document.
         except _req.exceptions.ConnectionError:
             _log("Error removing document, did the server die?")
             pass
+        except Exception as e:
+            _log("Unknown exception ({})".format(e))
+            pass
 
 
     _currentThread = {
