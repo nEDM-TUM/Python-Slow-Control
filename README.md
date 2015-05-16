@@ -5,7 +5,7 @@ pynedm provides a python module for communicating with the slow control
 database.
 
 Currently, one can define functions that can be exported to the Web interface
-and then executed in your program.  
+and then executed in your program.
 
 # Install/Upgrade:
 
@@ -24,11 +24,23 @@ or (for those installing without git on their systems)
 ```python
 import pynedm
 
+_server = "http://localhost:5984/"
+_un = "ausername"
+_pw = "apassword"
+_db = "name_of_database"
+
+po = pynedm.ProcessObject(_server, _un, _pw, _db)
+
 def do_work:
     """
-      do some work, can also write a document to the (current) db
+      do some work, can also write a document to the db
     """
-    pynedm.write_document_to_db({ "type" : "data",
+	# Note that the following function squelches errors unless you pass in
+    # ignoreErrors = False
+	# If is not critical that you write every single value to the db, then keep
+	# the default behavior.  If it *is* critical to write the document, then
+	# pass in ignoreErrors=False and put the call in a try: except:.
+	po.write_document_to_db({ "type" : "data",
                                  "value" : { "myvar" : 0 } })
     ...
 
@@ -37,15 +49,15 @@ execute_dict = {
 }
 
 # listen for commands listed in execute_dict
-pynedm.listen(execute_dict, "name_of_database", 
-              username="un", password="pw", uri="http://raid.nedm1:5984")  
+o = pynedm.listen(execute_dict, _db
+              username=_un, password=_pw, uri=_server)
 
 # Wait until listening ends
-pynedm.wait()
+o.wait()
 
 ```
 
-The above will wait and listen for documents that look like: 
+The above will wait and listen for documents that look like:
 
 ```javascript
 {
@@ -61,7 +73,7 @@ valid key in "execute", it will run the associated function and return a
 success message back to the inserted document.  In other words, the above
 document will become:
 
-```javascript 
+```javascript
 {
   // ...
   "type" : "command",
@@ -80,16 +92,14 @@ document will become:
 Where the message will indicate if the command was successful.
 
 Stopping:
-	```pynedm.listening``` automatically adds a function "stop" to the set of
-functions it is listening for.  This means a document with an execute "stop"
-field will request the program to end.  From the command line, one may also
-type CTRL-C to nicely end the program. 
+	```pynedm.listening``` From the command line, one may also
+type CTRL-C to nicely end the program.
 
 Threading, etc:
 	Note, it is possible to send multiple messages and have them be executed
 "simultaneously". This means you should take care either in your function or
 when writing to the database if your command is thread sensitive (i.e. only one
-version should be running at a time). 
+version should be running at a time).
 
 Long functions:
 	pynedm begins listenings for further messages as soon as it executes the

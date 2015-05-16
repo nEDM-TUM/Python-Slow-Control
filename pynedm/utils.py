@@ -1,16 +1,21 @@
 # Global to stop
 _should_stop = False
-_currentThread = None
+
+class CommandCollision(Exception):
+    pass
 
 class ProcessObject(object):
-    def __init__(self, uri, username, password, adb=None):
+    def __init__(self, uri, username, password, adb=None, verbose=False):
         import cloudant as _ca
         acct = _ca.Account(uri=uri)
         if username and password:
             res = acct.login(username, password)
             assert res.status_code == 200
         self.acct = acct
-        self.db = adb
+        self.db = self.acct[adb]
+        self._currentInfo = {}
+        self.isRunning = False
+        self.verbose = verbose
 
     def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
         try:
@@ -29,7 +34,76 @@ class ProcessObject(object):
             pass
           else: raise
 
+    def wait(self):
+        """
+        Wait until the current changes feed execution is complete.  Execution can
+        be stopped also by calling stop_listening()
+        """
+        if "thread" not in self._currentInfo: return
+        th = self._currentInfo["thread"]
+        while th.isAlive():
+          th.join(0.1)
+          if should_stop():
+            self.__remove_commands_doc()
+        self.__remove_commands_doc()
 
+    def __check_keys(self,docid):
+        import json
+        db = self.db
+        r = db.design("execute_commands").view("export_commands").get(params=dict(group_level=1)).json()
+        all_keys = dict([(x["key"],x["value"]) for x in r["rows"]])
+        bad_keys = [k for k in all_keys if all_keys[k] > 1] 
+        if len(bad_keys) > 0:
+            r = db.design("execute_commands").view("export_commands?reduce=false").post(
+              params=dict(reduce=False),
+              data=json.dumps(dict(keys=bad_keys))).json()
+            print r
+            s = set([x["id"] for x in r["rows"] if x["id"] != docid])
+            conflict_str = "\nKey conflicts:\n{}\n\ncheck the following documents:\n{}".format('\n'.join(bad_keys), '\n'.join(s))
+            if len(s) == 1:
+                conflict_str += """
+
+You have tried to use command keys that are in use!
+"""
+            raise CommandCollision(conflict_str)
+
+    def run(self, func_dic_copy, docid):
+        if self.isRunning: return
+        self.isRunning = True
+        db = self.db
+        from .listen import _watch_changes_feed
+        import threading as _th
+        self._currentInfo = {
+          "doc_name": docid,
+          "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy, self.verbose))
+        }
+        try:
+            self.__check_keys(docid)
+        except:
+            self.stop_listening()
+            raise
+ 
+        self._currentInfo["thread"].start()
+
+    def stop_listening(self):
+        self.__remove_commands_doc()
+
+    def __remove_commands_doc(self):
+        if not "doc_name" in self._currentInfo: return
+        doc_name = self._currentInfo["doc_name"]
+        db = self.db
+        _log("Removing commands doc {}".format(doc_name))
+        try:
+            doc = db.document(doc_name)
+            outp = doc.get().json()
+            doc.delete(outp["_rev"]).raise_for_status()
+        except _req.exceptions.ConnectionError:
+            _log("Error removing document, did the server die?")
+            pass
+        except Exception as e:
+            _log("Unknown exception ({})".format(e))
+            pass
+        del self._currentInfo["doc_name"]
 
 def _log(*args):
     print str(*args)
@@ -47,16 +121,6 @@ def start_process(func, *args, **kwargs):
     t.result = q
     return t
 
-def wait():
-    """
-    Wait until the current changes feed execution is complete.  Execution can
-    be stopped also by calling stop_listening()
-    """
-    if not _currentThread: return
-    th = _currentThread["thread"]
-    while th.isAlive(): th.join(0.1)
-    _currentThread["cleanup"]()
-
 def stop_listening(stop=True):
     """
     Request the listening to stop.  Code blocked on wait() will proceed.
@@ -72,7 +136,7 @@ def should_stop():
 
 def listen(function_dict,database,username=None,
            password=None, uri="http://localhost:5984", verbose=False,
-           force=False):
+           ):
     """
      function_dict should look like the following:
 
@@ -89,121 +153,10 @@ def listen(function_dict,database,username=None,
        }
 
        where of course the names can be more creative and func1/2 should be
-       actually references to functions.  A special key "stop" will be inserted
-       to ensure that the changes feed listening may be stopped by documents in
-       the DB.
+       actually references to functions.
     """
 
-    # Reset any stop listening flags
-    import time as _ti
-    import requests as _req
-    import httplib as _http
     stop_listening(False)
-    def _get_response(msg, retVal=None, ok = False):
-        """
-         _get_response returns a dictionary with a msg and a timestamp for
-         insertion into the db
-        """
-        ad = { "response" : {
-           "content" : msg,
-           "timestamp" : _ti.strftime("%a, %d %b %Y %H:%M:%S +0000", _ti.gmtime()),
-           "return" : retVal
-          }
-        }
-        if ok: ad["response"]["ok"] = True
-        return ad
-
-    def _watch_changes_feed(adb, fd):
-        """
-	_watch_changes_feed is a hidden function that performs all the work
-        watching the change feed
-        """
-
-        import threading as _th
-
-        def _fire_single_thread(des, fd, label, args):
-            try:
-                retVal = fd[label](*args)
-                des.put(upd, params=_get_response("'%s' success" % label, retVal, True))
-            except Exception, e:
-                des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
-                pass
-
-        def _heartbeat_thread(adb):
-            des = adb.design("nedm_default")
-            adoc = { "type" : "heartbeat" }
-            now = _ti.time()
-            while not should_stop():
-                if _ti.time() - now >= 10:
-                    now = _ti.time()
-                    try:
-                        des.post("_update/insert_with_timestamp/heartbeat", params=adoc)
-                    except:
-                        des = adb.design("nedm_default")
-                _ti.sleep(0.1)
-
-        all_threads = []
-
-        des = adb.design("nedm_default")
-        # Start Heartbeat thread
-        heartbeat = _th.Thread(target=_heartbeat_thread, args=(adb,))
-        heartbeat.start()
-        all_threads.append(heartbeat)
-        ####
-
-        connection_error = 0
-        if verbose: _log("Waiting for command...")
-        while 1:
-            try:
-                # Get changes feed and begin thread
-                changes = adb.changes(params=dict(feed='continuous',
-                                                  heartbeat=5000,
-                                                  since='now',
-                                                  include_docs=True,
-                                                  filter="execute_commands/execute_commands"),
-                                    emit_heartbeats=True
-                                   )
-                for line in changes:
-                    if line is None and should_stop(): break
-                    if line is None: continue
-                    try:
-                        doc = line["doc"]
-
-                        upd = "_update/insert_with_timestamp/" + line["id"]
-
-                        label = doc["execute"]
-                        args = doc.get("arguments", [])
-                        if verbose: _log("    command (%s) received" % label)
-
-                        if type(args) != type([]):
-                            raise Exception("'arguments' field must be a list")
-
-                        new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
-                        new_th.start()
-                        all_threads.append(new_th)
-                    except Exception, e:
-                        des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
-                        pass
-                    if verbose: _log("Waiting for next command...")
-                break
-            except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead) as e:
-                # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
-                _log("Ignoring exception {}".format(e))
-                pass
-            except _req.exceptions.ConnectionError:
-                if connection_error >= 4:
-                  _log("Seen too many connection errors, exiting")
-                  break
-                connection_error += 1
-                _ti.sleep(1)
-                pass
-
-        if not should_stop():
-            stop_listening()
-
-        for th in all_threads:
-            while th.isAlive(): th.join(0.1)
-
     # Handle interruption signals
     def _builtin_sighandler(sig, frame):
         stop_listening()
@@ -214,21 +167,16 @@ def listen(function_dict,database,username=None,
         _log("Not handling signals")
 
     # Now we start with the listen function
-    global _currentThread
-    import threading as _th
     import inspect as _ins
     import pydoc as _pyd
     import uuid as _uuid
 
     # Get the database information
     process_object = ProcessObject(uri, username, password, database)
-    db = process_object.acct[database]
 
-    # Introduce stop command
-    function_dict["stop"] = stop_listening
     # build_dictionary
-    document = { "_id" : "commands",
-                 "uuid" : _uuid.getnode(),
+    document = { "uuid" : _uuid.getnode(),
+                 "type" : "export_commands",
                  "keys" : {} }
 
     # Copy function dictionary
@@ -244,62 +192,12 @@ def listen(function_dict,database,username=None,
             func_dic_copy[k] = o[0]
         document["keys"][k] = exp_dic
 
-
     if verbose:
         _log("Tracking the following commands: \n" + '\n   '.join(function_dict.keys()))
 
-    r = db.get("commands")
-    des = db.design("nedm_default")
+    r = process_object.write_document_to_db(document)
+    if not "ok" in r:
+        raise Exception("Error seen: {}".format(r))
 
-    func = des.post
-    location = "_update/insert_with_timestamp"
-    outp = r.json()
-    if "error" not in outp:
-        msg = """
-**********************************
-'commands' document already exists.
-"""
-        if _uuid.getnode() != outp.get("uuid"):
-            msg += """    uuid (%s) does not match this uuid (%s).
-    Ensure no other program is running on another machine!""" % (str(outp.get("uuid")), str(_uuid.getnode()))
-        else:
-            msg += """    Ensure no other program is running on this machine"""
-        msg += """
-**********************************
-"""
-        _log(msg)
-        if not force:
-            _log("""
-**********************************
-Call 'listen' with 'force=True' to force removal of 'commands' document.
-**********************************
-""")
-            raise Exception("'commands' document present")
-        func = des.put
-        location += "/commands"
-        del document["_id"]
-
-    r = func(location,params=document)
-    if not "ok" in r.json():
-        raise Exception("Error seen: " + str(r.json()))
-
-    def remove_commands_doc_at_exit():
-        try:
-            doc = db.document("commands")
-            outp = doc.get().json()
-            doc.delete(outp["_rev"]).raise_for_status()
-        except _req.exceptions.ConnectionError:
-            _log("Error removing document, did the server die?")
-            pass
-        except Exception as e:
-            _log("Unknown exception ({})".format(e))
-            pass
-
-
-    _currentThread = {
-      "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy)),
-      "cleanup" : remove_commands_doc_at_exit
-    }
-    _currentThread["thread"].start()
-
-
+    process_object.run(func_dic_copy, r["id"])
+    return process_object

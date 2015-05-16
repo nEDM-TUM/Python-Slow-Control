@@ -1,5 +1,4 @@
-from .utils import wait,\
-                   stop_listening,\
+from .utils import stop_listening,\
                    listen,\
                    should_stop,\
                    start_process,\
