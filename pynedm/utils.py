@@ -97,6 +97,7 @@ def listen(function_dict,database,username=None,
     # Reset any stop listening flags
     import time as _ti
     import requests as _req
+    import httplib as _http
     stop_listening(False)
     def _get_response(msg, retVal=None, ok = False):
         """
@@ -185,8 +186,9 @@ def listen(function_dict,database,username=None,
                         pass
                     if verbose: _log("Waiting for next command...")
                 break
-            except _req.exceptions.ChunkedEncodingError:
+            except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead) as e:
                 # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
+                _log("Ignoring exception {}".format(e))
                 pass
             except _req.exceptions.ConnectionError:
                 if connection_error >= 4:
