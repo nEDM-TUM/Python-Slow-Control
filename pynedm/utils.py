@@ -58,7 +58,6 @@ class ProcessObject(object):
               params=dict(reduce=False),
               data=json.dumps(dict(keys=bad_keys))).json()
             url_to_use = db.uri_parts[0] + "://" + db.uri_parts[1] + "/_utils/document.html?" + db.uri_parts[2][1:] + "/"
-            print url_to_use
             s = set([x["id"] for x in r["rows"] if (x["id"] != docid and x["key"] in bad_keys)])
             conflict_str = "\nKey conflicts:\n{}\n\ncheck the following documents:\n{}".format('\n'.join(bad_keys), '\n'.join(map(lambda x: url_to_use + x, s)))
             if len(s) == 1:
