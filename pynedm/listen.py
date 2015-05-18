@@ -36,6 +36,8 @@ def _watch_changes_feed(adb, fd, verbose):
             pass
 
     def _heartbeat_thread(thedb):
+        import uuid as _uuid
+        anode = _uuid.getnode()
         des = thedb.design("nedm_default")
         adoc = { "type" : "heartbeat" }
         now = _ti.time()
@@ -43,7 +45,7 @@ def _watch_changes_feed(adb, fd, verbose):
             if _ti.time() - now >= 10:
                 now = _ti.time()
                 try:
-                    des.post("_update/insert_with_timestamp/heartbeat", params=adoc)
+                    des.post("_update/insert_with_timestamp/heartbeat_" + str(anode), params=adoc)
                 except:
                     des = thedb.design("nedm_default")
             _ti.sleep(0.1)
