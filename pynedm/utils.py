@@ -86,6 +86,7 @@ You have tried to use command keys that are in use!
         self.__remove_commands_doc()
 
     def __remove_commands_doc(self):
+        import requests as _req
         if not "doc_name" in self._currentInfo: return
         doc_name = self._currentInfo["doc_name"]
         db = self.acct[self.db]
