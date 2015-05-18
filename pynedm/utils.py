@@ -12,7 +12,7 @@ class ProcessObject(object):
             res = acct.login(username, password)
             assert res.status_code == 200
         self.acct = acct
-        self.db = self.acct[adb]
+        self.db = adb
         self._currentInfo = {}
         self.isRunning = False
         self.verbose = verbose
@@ -20,7 +20,7 @@ class ProcessObject(object):
     def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
         try:
           if db is None:
-            db = self.db
+            db = self.acct[self.db]
           else:
             db = self.acct[db]
         except:
@@ -49,7 +49,7 @@ class ProcessObject(object):
 
     def __check_keys(self,docid):
         import json
-        db = self.db
+        db = self.acct[self.db]
         r = db.design("execute_commands").view("export_commands").get(params=dict(group_level=1)).json()
         all_keys = dict([(x["key"],x["value"]) for x in r["rows"]])
         bad_keys = [k for k in all_keys if all_keys[k] > 1] 
@@ -71,7 +71,7 @@ You have tried to use command keys that are in use!
     def run(self, func_dic_copy, docid):
         if self.isRunning: return
         self.isRunning = True
-        db = self.db
+        db = self.acct[self.db]
         from .listen import _watch_changes_feed
         import threading as _th
         self._currentInfo = {
@@ -89,7 +89,7 @@ You have tried to use command keys that are in use!
     def __remove_commands_doc(self):
         if not "doc_name" in self._currentInfo: return
         doc_name = self._currentInfo["doc_name"]
-        db = self.db
+        db = self.acct[self.db]
         _log("Removing commands doc {}".format(doc_name))
         try:
             doc = db.document(doc_name)
