@@ -2,7 +2,7 @@
 import time as _ti
 import requests as _req
 import httplib as _http
-from .utils import should_stop
+from .utils import should_stop, _log
 
 def _watch_changes_feed(adb, fd, verbose):
     """
