@@ -78,12 +78,9 @@ You have tried to use command keys that are in use!
           "doc_name": docid,
           "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy, self.verbose))
         }
-        try:
-            self.__check_keys(docid)
-        except:
-            self.stop_listening()
-            raise
+        self.__check_keys(docid)
  
+        self._currentInfo["thread"].daemon = True
         self._currentInfo["thread"].start()
 
     def stop_listening(self):
@@ -105,6 +102,10 @@ You have tried to use command keys that are in use!
             _log("Unknown exception ({})".format(e))
             pass
         del self._currentInfo["doc_name"]
+
+    def __del__(self):
+        stop_listening(True)
+        self.wait()
 
 def _log(*args):
     print str(*args)
