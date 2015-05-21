@@ -1,11 +1,9 @@
 # Global to stop
-_should_stop = False
-def _default_log(*args):
-    print str(*args)
+import logging
 
-_log = _default_log
-if "log" in globals():
-    _log = log
+_should_stop = False
+def _log(*args):
+    logging.info(*args)
 
 class CommandCollision(Exception):
     pass
