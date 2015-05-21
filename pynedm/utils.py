@@ -1,5 +1,11 @@
 # Global to stop
 _should_stop = False
+def _default_log(*args):
+    print str(*args)
+
+_log = _default_log
+if "log" in globals():
+    _log = log
 
 class CommandCollision(Exception):
     pass
@@ -107,9 +113,6 @@ You have tried to use command keys that are in use!
         stop_listening(True)
         self.wait()
 
-def _log(*args):
-    print str(*args)
-
 def start_process(func, *args, **kwargs):
     import Queue as _q
     import threading as _th
@@ -130,7 +133,7 @@ def stop_listening(stop=True):
     global _should_stop
     if not type(stop) == type(True):
       raise Exception("Expected bool, received (%s)" % type(stop))
-    if stop: _log("Stop Requested")
+    if stop and not _should_stop: _log("Stop Requested")
     _should_stop = stop
 
 def should_stop():
