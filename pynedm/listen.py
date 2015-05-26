@@ -74,6 +74,7 @@ def _watch_changes_feed(adb, fd, verbose):
                                )
             for line in changes:
                 if line is None and should_stop(): break
+                connection_error = 0
                 if line is None: continue
                 try:
                     doc = line["doc"]
