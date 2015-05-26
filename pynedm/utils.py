@@ -56,7 +56,7 @@ class ProcessObject(object):
         db = self.acct[self.db]
         r = db.design("execute_commands").view("export_commands").get(params=dict(group_level=1)).json()
         all_keys = dict([(x["key"],x["value"]) for x in r["rows"]])
-        bad_keys = [k for k in all_keys if all_keys[k] > 1] 
+        bad_keys = [k for k in all_keys if all_keys[k] > 1]
         if len(bad_keys) > 0:
             r = db.design("execute_commands").view("export_commands?reduce=false").post(
               params=dict(reduce=False),
@@ -82,7 +82,7 @@ You have tried to use command keys that are in use!
           "thread"  : _th.Thread(target=_watch_changes_feed, args=(db, func_dic_copy, self.verbose))
         }
         self.__check_keys(docid)
- 
+
         self._currentInfo["thread"].daemon = True
         self._currentInfo["thread"].start()
 
