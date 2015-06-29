@@ -74,6 +74,8 @@ def _watch_changes_feed(adb, fd, verbose):
                                )
             for line in changes:
                 if line is None and should_stop(): break
+                if connection_error != 0:
+                    _log("Connection reset after {} tries".format(connection_error))
                 connection_error = 0
                 if line is None: continue
                 try:
@@ -101,9 +103,6 @@ def _watch_changes_feed(adb, fd, verbose):
             _log("Ignoring exception {}".format(e))
             pass
         except _req.exceptions.ConnectionError:
-            if connection_error >= 4:
-              _log("Seen too many connection errors, exiting")
-              break
             connection_error += 1
             _ti.sleep(1)
             pass
