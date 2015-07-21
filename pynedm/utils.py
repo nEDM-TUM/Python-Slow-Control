@@ -162,6 +162,7 @@ def listen(function_dict,database,username=None,
     stop_listening(False)
     # Handle interruption signals
     def _builtin_sighandler(sig, frame):
+        _log("Handler called {}, {}".format(sig, frame))
         stop_listening()
     import signal
     try:
