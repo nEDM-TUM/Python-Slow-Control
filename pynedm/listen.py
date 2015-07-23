@@ -102,7 +102,10 @@ def _watch_changes_feed(adb, fd, verbose):
             # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
             _log("Ignoring exception {}".format(e))
             pass
-        except _req.exceptions.ConnectionError:
+        except:
+            # all errors?
+            import traceback
+            _log("Seen unexpected error in changes feed: {}".format(traceback.format_exc()))
             connection_error += 1
             _ti.sleep(1)
             pass
