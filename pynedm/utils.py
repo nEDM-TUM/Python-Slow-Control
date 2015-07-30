@@ -12,14 +12,14 @@ class ProcessObject(object):
     def __init__(self, uri, username, password, adb=None, verbose=False):
         import cloudant as _ca
         acct = _ca.Account(uri=uri)
+        self._currentInfo = {}
+        self.isRunning = False
+        self.verbose = verbose
         if username and password:
             res = acct.login(username, password)
             assert res.status_code == 200
         self.acct = acct
         self.db = adb
-        self._currentInfo = {}
-        self.isRunning = False
-        self.verbose = verbose
 
     def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
         try:
