@@ -48,6 +48,15 @@ execute_dict = {
     "do_work_key" : do_work,
 }
 
+# execute_dict can also be tuples of functions and JSON-parsable objects, e.g.:
+# execute_dict = {
+#   "do_work_key" : (do_work, "this is a function that does blah)
+# }
+#
+# execute_dict = {
+#  "do_work_key" : (do_work, { "extrainfo" : 123, "help" : "Hi" }))
+# }
+
 # listen for commands listed in execute_dict
 o = pynedm.listen(execute_dict, _db
               username=_un, password=_pw, uri=_server)
