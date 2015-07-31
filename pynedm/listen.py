@@ -2,7 +2,8 @@
 import time as _ti
 import requests as _req
 import httplib as _http
-from .utils import should_stop, _log
+from .utils import should_stop, _log, _exception
+import traceback
 
 def _watch_changes_feed(adb, fd, verbose):
     """
@@ -47,7 +48,7 @@ def _watch_changes_feed(adb, fd, verbose):
                 try:
                     des.post("_update/insert_with_timestamp/heartbeat_" + str(anode), params=adoc)
                 except:
-                    des = thedb.design("nedm_default")
+                    _exception("Heartbeat exception")
             _ti.sleep(0.1)
 
     all_threads = []
@@ -93,9 +94,8 @@ def _watch_changes_feed(adb, fd, verbose):
                     new_th = _th.Thread(target=_fire_single_thread, args=(des, fd, label, args))
                     new_th.start()
                     all_threads.append(new_th)
-                except Exception, e:
-                    des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
-                    pass
+                except:
+                    _exception("Unexpected exception while listening")
                 if verbose: _log("Waiting for next command...")
             break
         except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead) as e:
