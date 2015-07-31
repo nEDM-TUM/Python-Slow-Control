@@ -1,7 +1,7 @@
 Python-Slow-Control
 ===================
 
-pynedm provides a python module for communicating with the slow control
+`pynedm` provides a python module for communicating with the slow control
 database.
 
 Currently, one can define functions that can be exported to the Web interface
@@ -104,14 +104,14 @@ Stopping:
 	```pynedm.listening``` From the command line, one may also
 type CTRL-C to nicely end the program.
 
-Threading, etc:
-	Note, it is possible to send multiple messages and have them be executed
+###Threading, etcp
+Note, it is possible to send multiple messages and have them be executed
 "simultaneously". This means you should take care either in your function or
 when writing to the database if your command is thread sensitive (i.e. only one
 version should be running at a time).
 
-Long functions:
-	pynedm begins listenings for further messages as soon as it executes the
+###Long functions
+`pynedm` begins listenings for further messages as soon as it executes the
 requested function.  This means it does not wait for the end of the function,
 but it is important that the function returns a value relatively quickly so
 that the web control doesn't time out.  There is an example of how to handle
