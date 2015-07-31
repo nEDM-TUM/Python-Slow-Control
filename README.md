@@ -144,3 +144,77 @@ this in:
 
 examples/long_run_process.py
 
+## Dealing with files on documents
+
+`pynedm.ProcessObject` has functions for dealing with files associated with documents
+in the database that are being served using https://github.com/nEDM-TUM/FileServer-Docker.
+An example usage is shown here:
+
+```python
+import pynedm
+from clint.textui.progress import Bar as ProgressBar
+import json
+
+o = pynedm.ProcessObject("http://server",
+  "username",
+  "password") 
+
+bar = None
+def callback(read, total):
+    global bar
+    if bar is None:
+        bar = ProgressBar(expected_size=total, filled_char='=')
+    bar.show(read)
+
+_fn = "temp.out"
+_doc = "no_exist"
+_db = "nedm%2Fhg_laser"
+
+uploading = o.upload_file(_fn, _doc, db=_db, callback=callback)
+# During run, outputs progress bar e.g.: 
+#
+# [================================] 20971520/20971520 - 00:00:00
+
+print("\n{}".format(json.dumps(uploading, indent=4)))
+# Outputs:
+#
+# {
+#    "ok": true, 
+#    "attachments": {
+#        "temp.out": {
+#            "size": 20971520, 
+#            "ondiskname": "temp.out", 
+#            "time": {
+#                "atime": 1438354911.5317702, 
+#                "ctime": 1438354912.698768, 
+#                "crtime": 1438354912.698768, 
+#                "mtime": 1438354912.691768
+#            }
+#        }
+#    }, 
+#    "id": "no_exist"
+# }
+
+x = o.download_file(_doc, _fn, db=_db)
+bar = ProgressBar(expected_size=x.next(), filled_char='=')
+total = 0
+for i in x:
+    total += len(i)
+    bar.show(total)
+
+# Outputs progress bar, e.g.:
+#
+# [================================] 20971520/20971520 - 00:00:00
+# 
+print("\n")
+
+print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
+# Outputs remaining attachments:
+#
+# {
+#    "ok": true, 
+#    "attachments": {}, 
+#    "id": "no_exist"
+# }
+```
+
