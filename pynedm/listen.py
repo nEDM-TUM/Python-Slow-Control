@@ -5,6 +5,9 @@ import httplib as _http
 from .utils import should_stop, _log, _exception
 import traceback
 
+class ShouldStop(Exception):
+    pass
+
 def _watch_changes_feed(adb, fd, verbose):
     """
     _watch_changes_feed is a hidden function that performs all the work
@@ -65,6 +68,7 @@ def _watch_changes_feed(adb, fd, verbose):
     while 1:
         try:
             # Get changes feed and begin thread
+            if should_stop(): raise ShouldStop()
             changes = adb.changes(params=dict(feed='continuous',
                                               heartbeat=2000,
                                               since='now',
@@ -74,7 +78,7 @@ def _watch_changes_feed(adb, fd, verbose):
                                 emit_heartbeats=True
                                )
             for line in changes:
-                if line is None and should_stop(): break
+                if line is None and should_stop(): raise ShouldStop()
                 if connection_error != 0:
                     _log("Connection reset after {} tries".format(connection_error))
                 connection_error = 0
@@ -97,18 +101,17 @@ def _watch_changes_feed(adb, fd, verbose):
                 except:
                     _exception("Unexpected exception while listening")
                 if verbose: _log("Waiting for next command...")
-            break
-        except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead) as e:
+        except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead):
             # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
-            _log("Ignoring exception {}".format(e))
+            _log("Ignoring exception {}".format(traceback.format_exc()))
             pass
+        except ShouldStop:
+            break
         except:
-            # all errors?
-            import traceback
+            # all other errors?
             _log("Seen unexpected error in changes feed: {}".format(traceback.format_exc()))
             connection_error += 1
             _ti.sleep(1)
-            pass
 
     if not should_stop():
         stop_listening()
