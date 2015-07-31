@@ -1,5 +1,6 @@
 # Global to stop
 import logging
+import os
 
 _should_stop = False
 def _log(*args):
@@ -46,6 +47,102 @@ class ProcessObject(object):
             return {}
             pass
           else: raise
+
+    def _attachment_path(self, docid, attachment_name, db=None):
+        """
+        Helper function to grab the attachment path
+        """
+        if db is None:
+            db = self.db
+        if db is None:
+            raise PynEDMException("db must be defined")
+        return '/'.join([self.acct.uri, '_attachments', db, docid, attachment_name])
+
+    def delete_file(self, docid, attachment_name, db=None):
+        """
+        delete file associated with docid.
+
+        Return json response from server.
+        """
+        delete_url = self._attachment_path(docid, attachment_name, db)
+        return self.acct.delete(delete_url).json()
+
+    def download_file(self, docid, attachment_name, db=None, chunk_size=100*1024):
+        """
+		download file associated with docid, yields the data in chunks first
+		data yielded is the total expected size, the rest is the data from the
+        file.  Example usage:
+
+            from clint.textui.progress import Bar as ProgressBar
+            total_size = None
+            x = process_object.download_file("docid", "attachment", "mydb")
+            bar = ProgressBar(expected_size=x.next(), filled_char='=')
+            total = 0
+            with open("temp_file.out", "wb") as o:
+                for ch in x:
+                    total += len(ch)
+                    bar.show(total)
+                    o.write(ch)
+                    o.flush()
+
+        """
+        download_url = self._attachment_path(docid, attachment_name, db)
+        r = self.acct.get(download_url, stream=True)
+        yield int(r.headers['content-length'])
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            if chunk: yield chunk
+
+    def upload_file(self, file_name, docid, db=None,attachment_name=None,callback=None):
+        """
+        Upload file associated with a particular doc id
+
+        file_name : full path to file
+        docid     : id of document
+        db        : (*optional named*) name of database
+        callback  : (*optional named*) upload callback, should be of form: func(size_read, total_size)
+        attachment_name  : (*optional named*) name of attachment, otherwise name will be taken from file
+        """
+        if attachment_name is None:
+            attachment_name = os.path.basename(file_name)
+        post_to_url = self._attachment_path(docid, attachment_name, db)
+
+        cookies = '; '.join(['='.join(x) for x in self.acct._session.cookies.items()])
+
+        import pycurl
+        from StringIO import StringIO
+
+        total_size = os.path.getsize(file_name)
+
+
+        class FileReader:
+            def __init__(self, fp, callback = None):
+                self.fp = fp
+                self.total_read = 0
+                self.cbck = callback
+            def read_callback(self, size):
+                x = self.fp.read(size)
+                if x is not None:
+                    self.total_read += len(x)
+                    if self.cbck: self.cbck(self.total_read, total_size)
+                return x
+
+        c = pycurl.Curl()
+        storage = StringIO()
+        c.setopt(pycurl.URL, post_to_url)
+        c.setopt(pycurl.PUT, 1)
+        c.setopt(pycurl.READFUNCTION, FileReader(open(file_name, 'rb'), callback).read_callback)
+        c.setopt(pycurl.INFILESIZE, total_size)
+        c.setopt(c.WRITEFUNCTION, storage.write)
+        c.setopt(c.COOKIE, cookies)
+
+        c.perform()
+        c.close()
+        content = storage.getvalue()
+        try:
+            return json.loads(content)
+        except:
+            return { "error" : True, "content" : content }
+
 
     def wait(self):
         """
