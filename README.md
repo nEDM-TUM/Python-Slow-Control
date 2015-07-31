@@ -91,8 +91,8 @@ document will become:
   "response" : {
     "content" : "a msg",
     "timestamp" : "a timestamp",
-    "return" : "Value returned by function", # can be NULL
-    "ok" : True # only present if everything went ok
+    "return" : "Value returned by function", // can be NULL
+    "ok" : true // only present if everything went ok
   }
   // ...
 }
@@ -101,10 +101,35 @@ document will become:
 Where the message will indicate if the command was successful.
 
 Stopping:
-	```pynedm.listening``` From the command line, one may also
-type CTRL-C to nicely end the program.
+From the command line, one may also type `CTRL-C` to nicely end the program.
 
-###Threading, etcp
+###In the database
+Calling `pynedm.listen` inserts a document into the database of type `"export_commands"`.
+The content of this document depends upon the what was passed into `listen`:
+
+```javascript
+{
+  // ...
+  "type" : "export_commands",
+  "uuid" : "uuidofprogram", // defined by pynedm
+  "keys" : {
+      "do_work_key" : {
+          "Info" : "this is the help string" // This is either the pydoc help string,
+                                             // or the second object in the tuple passed in to listen
+      },
+      "other_work_key" : {
+          "Info" : { 
+            "extrainfo" : 123,
+            "help" : "Hi"
+          }
+      }      
+  }
+  // ...
+}
+```
+
+
+###Threading, etc.
 Note, it is possible to send multiple messages and have them be executed
 "simultaneously". This means you should take care either in your function or
 when writing to the database if your command is thread sensitive (i.e. only one
