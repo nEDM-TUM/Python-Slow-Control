@@ -5,6 +5,9 @@ _should_stop = False
 def _log(*args):
     logging.info(*args)
 
+def _exception(*args):
+    logging.exception(*args)
+
 class CommandCollision(Exception):
     pass
 
