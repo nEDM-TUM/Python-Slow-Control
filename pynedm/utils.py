@@ -1,6 +1,7 @@
 # Global to stop
 import logging
 import os
+import json
 
 _should_stop = False
 def _log(*args):
