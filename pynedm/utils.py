@@ -11,6 +11,9 @@ def _exception(*args):
 class CommandCollision(Exception):
     pass
 
+class PynEDMException(Exception):
+    pass
+
 class ProcessObject(object):
     def __init__(self, uri, username, password, adb=None, verbose=False):
         import cloudant as _ca
@@ -25,13 +28,16 @@ class ProcessObject(object):
         self.db = adb
 
     def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
+        """
+        Write a document to the database.
+        """
         try:
           if db is None:
             db = self.acct[self.db]
           else:
             db = self.acct[db]
         except:
-          raise Exception("Cannot write while not listening")
+          raise PynEDMException("Cannot write while not listening")
         try:
           return db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc).json()
         except Exception as e:
@@ -105,7 +111,7 @@ You have tried to use command keys that are in use!
         except _req.exceptions.ConnectionError:
             _log("Error removing document, did the server die?")
             pass
-        except Exception as e:
+        except PynEDMException as e:
             _log("Unknown exception ({})".format(e))
             pass
         del self._currentInfo["doc_name"]
@@ -133,7 +139,7 @@ def stop_listening(stop=True):
     """
     global _should_stop
     if not type(stop) == type(True):
-      raise Exception("Expected bool, received (%s)" % type(stop))
+      raise PynEDMException("Expected bool, received (%s)" % type(stop))
     if stop and not _should_stop: _log("Stop Requested")
     _should_stop = stop
 
@@ -204,7 +210,7 @@ def listen(function_dict,database,username=None,
 
     r = process_object.write_document_to_db(document)
     if not "ok" in r:
-        raise Exception("Error seen: {}".format(r))
+        raise PynEDMException("Error seen: {}".format(r))
 
     process_object.run(func_dic_copy, r["id"])
     return process_object
