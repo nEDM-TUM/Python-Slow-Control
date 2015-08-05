@@ -63,7 +63,7 @@ class ProcessObject(object):
         delete_url = self._attachment_path(docid, attachment_name, db)
         return self.acct.delete(delete_url).json()
 
-    def download_file(self, docid, attachment_name, db=None, chunk_size=100*1024):
+    def download_file(self, docid, attachment_name, db=None, chunk_size=100*1024, headers=None):
         """
 		download file associated with docid, yields the data in chunks first
 		data yielded is the total expected size, the rest is the data from the
@@ -83,7 +83,8 @@ class ProcessObject(object):
 
         """
         download_url = self._attachment_path(docid, attachment_name, db)
-        r = self.acct.get(download_url, stream=True)
+        if headers is None: headers = {}
+        r = self.acct.get(download_url, stream=True, headers=headers)
         yield int(r.headers['content-length'])
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk: yield chunk
