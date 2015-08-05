@@ -2,6 +2,7 @@
 import logging
 import os
 import json
+from .exception import CommandCollision, PynEDMException
 
 _should_stop = False
 def _log(*args):
@@ -9,12 +10,6 @@ def _log(*args):
 
 def _exception(*args):
     logging.exception(*args)
-
-class CommandCollision(Exception):
-    pass
-
-class PynEDMException(Exception):
-    pass
 
 class ProcessObject(object):
     def __init__(self, uri, username, password, adb=None, verbose=False):
