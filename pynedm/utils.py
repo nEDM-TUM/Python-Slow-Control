@@ -2,6 +2,7 @@
 import logging
 import os
 import json
+from .fileutils import AttachmentFile
 from .exception import CommandCollision, PynEDMException
 
 _should_stop = False
@@ -62,6 +63,29 @@ class ProcessObject(object):
         """
         delete_url = self._attachment_path(docid, attachment_name, db)
         return self.acct.delete(delete_url).json()
+
+    def open_file(self, docid, attachment_name, db=None):
+        """
+		open file for reading, allows reading ranges of data. Example usage:
+
+            o = ProcessObject(...)
+            _fn = "temp.out"
+            _doc = "no_exist"
+            _db = "nedm%2Fhg_laser"
+
+            x = o.open_file(_doc, _fn, db=_db)
+            y = x.read(4)
+
+            print len(y), y
+
+            print x.read()
+            x.seek(1)
+            for i in x.iterate(10):
+                print i
+        """
+        download_url = self._attachment_path(docid, attachment_name, db)
+        return AttachmentFile(self.acct[download_url])
+
 
     def download_file(self, docid, attachment_name, db=None, chunk_size=100*1024, headers=None):
         """
