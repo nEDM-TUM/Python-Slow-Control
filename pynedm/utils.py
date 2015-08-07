@@ -113,18 +113,30 @@ class ProcessObject(object):
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk: yield chunk
 
-    def upload_file(self, file_name, docid, db=None,attachment_name=None,callback=None):
+    def upload_file(self, file_or_name, docid, db=None,attachment_name=None,callback=None):
         """
         Upload file associated with a particular doc id
 
-        file_name : full path to file
+        file_or_name : full path to file or file-like object
         docid     : id of document
         db        : (*optional named*) name of database
         callback  : (*optional named*) upload callback, should be of form: func(size_read, total_size)
         attachment_name  : (*optional named*) name of attachment, otherwise name will be taken from file
         """
-        if attachment_name is None:
-            attachment_name = os.path.basename(file_name)
+        actual_file = file_or_name
+        if not hasattr(file_or_name, "read"):
+            # Assume it's a file-like object
+            if not attachment_name:
+                attachment_name = os.path.basename(file_or_name)
+            actual_file = open(file_or_name, "rb")
+        elif not attachment_name:
+            raise PynEDMException("Must include attachment name for file-like objects")
+
+        # Get file size
+        actual_file.seek(0, 2) 
+        total_size = actual_file.tell()
+        actual_file.seek(0) 
+
         post_to_url = self._attachment_path(docid, attachment_name, db)
 
         cookies = '; '.join(['='.join(x) for x in self.acct._session.cookies.items()])
@@ -132,7 +144,6 @@ class ProcessObject(object):
         import pycurl
         from StringIO import StringIO
 
-        total_size = os.path.getsize(file_name)
 
 
         class FileReader:
@@ -151,7 +162,7 @@ class ProcessObject(object):
         storage = StringIO()
         c.setopt(pycurl.URL, post_to_url)
         c.setopt(pycurl.PUT, 1)
-        c.setopt(pycurl.READFUNCTION, FileReader(open(file_name, 'rb'), callback).read_callback)
+        c.setopt(pycurl.READFUNCTION, FileReader(actual_file, callback).read_callback)
         c.setopt(pycurl.INFILESIZE, total_size)
         c.setopt(c.WRITEFUNCTION, storage.write)
         c.setopt(c.COOKIE, cookies)
