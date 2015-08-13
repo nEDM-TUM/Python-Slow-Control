@@ -148,7 +148,9 @@ examples/long_run_process.py
 
 `pynedm.ProcessObject` has functions for dealing with files associated with documents
 in the database that are being served using https://github.com/nEDM-TUM/FileServer-Docker.
-An example usage is shown here:
+Example usages are given:
+
+### Uploading
 
 ```python
 import pynedm
@@ -194,20 +196,40 @@ print("\n{}".format(json.dumps(uploading, indent=4)))
 #    }, 
 #    "id": "no_exist"
 # }
+```
+### Downloading 
 
+```python
 x = o.download_file(_doc, _fn, db=_db)
 bar = ProgressBar(expected_size=x.next(), filled_char='=')
 total = 0
 for i in x:
     total += len(i)
     bar.show(total)
-
 # Outputs progress bar, e.g.:
 #
 # [================================] 20971520/20971520 - 00:00:00
 # 
 print("\n")
+```
 
+### Open as file-like object
+
+```python
+x = o.open_file(_doc, _fn, db=_db)
+y = x.read(4)
+
+print len(y), y
+
+print x.read()
+x.seek(1)
+for i in x.iterate(10):
+    print i
+```
+
+### Delete file  
+
+```python
 print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 # Outputs remaining attachments:
 #
