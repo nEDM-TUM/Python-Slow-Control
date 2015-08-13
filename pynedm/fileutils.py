@@ -38,7 +38,7 @@ class AttachmentFile(Resource):
             })
             t.raise_for_status()
             self.seek(to+1)
-            return t.text
+            return t.content
         except Exception as e:
             raise PynEDMNoFile(str(e))
 
