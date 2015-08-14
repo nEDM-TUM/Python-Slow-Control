@@ -13,13 +13,21 @@ class AttachmentFile(Resource):
         except Exception as e:
             raise PynEDMNoFile(str(e))
 
-    def seek(self, seekpos):
+    def seek(self, seekpos, whence=0):
         """
         Seek to a position
         """
-        if seekpos >= self.total_length:
-            seekpos = self.total_length - 1
+        if whence == 1:
+            seekpos += self.curr_pos
+        elif whence == 2:
+            seekpos = self.total_length - seekpos
+            
+        if seekpos > self.total_length:
+            seekpos = self.total_length
         self.curr_pos = seekpos
+
+    def tell(self):
+        return self.curr_pos
 
     def read(self, numbytes=-1):
         """
@@ -30,7 +38,7 @@ class AttachmentFile(Resource):
         to = self.curr_pos + numbytes - 1
         if to >= self.total_length:
             to = self.total_length-1
-        if self.curr_pos == to:
+        if self.curr_pos >= to:
             return None
         try:
             t = self.req.get(headers={
