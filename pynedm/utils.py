@@ -13,15 +13,16 @@ def _exception(*args):
     logging.exception(*args)
 
 class ProcessObject(object):
-    def __init__(self, uri, username=None, password=None, adb=None, verbose=False):
+    def __init__(self, uri=None, acct=None, username=None, password=None, adb=None, verbose=False):
         import cloudant as _ca
-        acct = _ca.Account(uri=uri)
+        if acct is None:
+            acct = _ca.Account(uri=uri)
+            if username and password:
+                res = acct.login(username, password)
+                assert res.status_code == 200
         self._currentInfo = {}
         self.isRunning = False
         self.verbose = verbose
-        if username and password:
-            res = acct.login(username, password)
-            assert res.status_code == 200
         self.acct = acct
         self.db = adb
 
