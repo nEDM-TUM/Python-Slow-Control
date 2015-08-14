@@ -13,7 +13,7 @@ def _exception(*args):
     logging.exception(*args)
 
 class ProcessObject(object):
-    def __init__(self, uri, username, password, adb=None, verbose=False):
+    def __init__(self, uri, username=None, password=None, adb=None, verbose=False):
         import cloudant as _ca
         acct = _ca.Account(uri=uri)
         self._currentInfo = {}
