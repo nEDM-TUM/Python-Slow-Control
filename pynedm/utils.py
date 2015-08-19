@@ -13,8 +13,9 @@ def _exception(*args):
     logging.exception(*args)
 
 class ProcessObject(object):
-    def __init__(self, uri=None, acct=None, username=None, password=None, adb=None, verbose=False):
+    def __init__(self, uri=None, username=None, password=None, adb=None, verbose=False, **kw):
         import cloudant as _ca
+        acct = kw.get("acct", None)
         if acct is None:
             acct = _ca.Account(uri=uri)
             if username and password:
