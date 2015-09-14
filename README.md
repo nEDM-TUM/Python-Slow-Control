@@ -54,7 +54,7 @@ execute_dict = {
 # }
 #
 # execute_dict = {
-#  "do_work_key" : (do_work, { "extrainfo" : 123, "help" : "Hi" }))
+#  "do_work_key" : (do_work, { "extrainfo" : 123, "help_msg" : "Hi" }))
 # }
 
 # listen for commands listed in execute_dict
@@ -120,7 +120,8 @@ The content of this document depends upon the what was passed into `listen`:
       "other_work_key" : {
           "Info" : { 
             "extrainfo" : 123,
-            "help" : "Hi"
+            "help_msg" : "this is the help string" // This is interpreted as the help string
+                                                   // Other info here way be interpreted, e.g. by the web interface.
           }
       }      
   }
