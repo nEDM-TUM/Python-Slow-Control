@@ -50,6 +50,12 @@ class AttachmentFile(Resource):
         except Exception as e:
             raise PynEDMNoFile(str(e))
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
     def iterate(self, chunk_size):
         """
         Iterates from this current position to the end of the file
