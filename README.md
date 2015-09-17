@@ -29,7 +29,7 @@ _un = "ausername"
 _pw = "apassword"
 _db = "name_of_database"
 
-po = pynedm.ProcessObject(_server, _un, _pw, _db)
+po = pynedm.ProcessObject(uri=_server, username=_un, password=_pw, adb=_db)
 
 def do_work:
     """
@@ -158,9 +158,9 @@ import pynedm
 from clint.textui.progress import Bar as ProgressBar
 import json
 
-o = pynedm.ProcessObject("http://server",
-  "username",
-  "password") 
+o = pynedm.ProcessObject(uri="http://server",
+  username="username",
+  password="password") 
 
 bar = None
 def callback(read, total):
