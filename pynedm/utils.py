@@ -21,7 +21,8 @@ class ProcessObject(object):
             acct = _ca.Account(uri=uri)
             if username and password:
                 res = acct.login(username, password)
-                assert res.status_code == 200
+                if res.status_code != 200:
+                    raise PynEDMException("User credentials incorrect")
         self.isRunning = False
         self.verbose = verbose
         self.acct = acct
