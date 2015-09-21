@@ -5,12 +5,20 @@ import json
 from .fileutils import AttachmentFile
 from .exception import CommandCollision, PynEDMException
 
+
+_logger = logging.getLogger(__name__)
 _should_stop = False
+def _debug(*args):
+    _logger.debug(*args)
+
 def _log(*args):
-    logging.info(*args)
+    _logger.info(*args)
+
+def _error(*args):
+    _logger.error(*args)
 
 def _exception(*args):
-    logging.exception(*args)
+    _logger.exception(*args)
 
 class ProcessObject(object):
     def __init__(self, uri=None, username=None, password=None, adb=None, verbose=False, **kw):
