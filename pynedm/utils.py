@@ -280,6 +280,7 @@ def should_stop():
 
 def listen(function_dict,database,username=None,
            password=None, uri="http://localhost:5984", verbose=False,
+           **kw
            ):
     """
      function_dict should look like the following:
