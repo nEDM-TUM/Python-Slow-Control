@@ -4,22 +4,10 @@ import os
 import json
 from .fileutils import AttachmentFile
 from .exception import CommandCollision, PynEDMException
+from .log import (debug, log, error, exception, listening_addresses)
 
 
-_logger = logging.getLogger(__name__)
 _should_stop = False
-def _debug(*args):
-    _logger.debug(*args)
-
-def _log(*args):
-    _logger.info(*args)
-
-def _error(*args):
-    _logger.error(*args)
-
-def _exception(*args):
-    _logger.exception(*args)
-
 class ProcessObject(object):
     def __init__(self, uri=None, username=None, password=None, adb=None, verbose=False, **kw):
         import cloudant as _ca
@@ -51,7 +39,7 @@ class ProcessObject(object):
           return db.design("nedm_default").post("_update/insert_with_timestamp",params=adoc).json()
         except Exception as e:
           if ignoreErrors:
-            _log("Exception ({}) when posting doc({})".format(e,adoc))
+            log("Exception ({}) when posting doc({})".format(e,adoc))
             return {}
             pass
           else: raise
@@ -243,16 +231,16 @@ You have tried to use command keys that are in use!
         if not "doc_name" in self._currentInfo: return
         doc_name = self._currentInfo["doc_name"]
         db = self.acct[self.db]
-        _log("Removing commands doc {}".format(doc_name))
+        log("Removing commands doc {}".format(doc_name))
         try:
             doc = db.document(doc_name)
             outp = doc.get().json()
             doc.delete(outp["_rev"]).raise_for_status()
         except _req.exceptions.ConnectionError:
-            _log("Error removing document, did the server die?")
+            log("Error removing document, did the server die?")
             pass
         except PynEDMException as e:
-            _log("Unknown exception ({})".format(e))
+            log("Unknown exception ({})".format(e))
             pass
         del self._currentInfo["doc_name"]
 
@@ -280,7 +268,7 @@ def stop_listening(stop=True):
     global _should_stop
     if not type(stop) == type(True):
       raise PynEDMException("Expected bool, received (%s)" % type(stop))
-    if stop and not _should_stop: _log("Stop Requested")
+    if stop and not _should_stop: log("Stop Requested")
     _should_stop = stop
 
 def should_stop():
@@ -312,13 +300,13 @@ def listen(function_dict,database,username=None,
     stop_listening(False)
     # Handle interruption signals
     def _builtin_sighandler(sig, frame):
-        _log("Handler called {}, {}".format(sig, frame))
+        log("Handler called {}, {}".format(sig, frame))
         stop_listening()
     import signal
     try:
         signal.signal(signal.SIGINT, _builtin_sighandler)
     except ValueError:
-        _log("Not handling signals")
+        log("Not handling signals")
 
     # Now we start with the listen function
     import inspect as _ins
@@ -331,7 +319,8 @@ def listen(function_dict,database,username=None,
     # build_dictionary
     document = { "uuid" : _uuid.getnode(),
                  "type" : "export_commands",
-                 "keys" : {} }
+                 "keys" : {},
+                 "log_servers" : listening_addresses() }
 
     # Copy function dictionary
     func_dic_copy = function_dict.copy()
@@ -347,7 +336,7 @@ def listen(function_dict,database,username=None,
         document["keys"][k] = exp_dic
 
     if verbose:
-        _log("Tracking the following commands: \n" + '\n   '.join(function_dict.keys()))
+        log("Tracking the following commands: \n" + '\n   '.join(function_dict.keys()))
 
     r = process_object.write_document_to_db(document)
     if not "ok" in r:

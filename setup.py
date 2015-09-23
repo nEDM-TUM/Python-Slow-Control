@@ -7,5 +7,5 @@ setup(
   url='https://github.com/nEDM-TUM/Python-Slow-Control',
   author='Michael Marino',
   author_email='mmarino@gmail.com',
-  install_requires=['cloudant', 'pycurl']
+  install_requires=['cloudant', 'pycurl', 'autobahn', 'netifaces']
 )

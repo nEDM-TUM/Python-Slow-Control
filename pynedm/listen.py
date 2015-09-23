@@ -2,7 +2,7 @@
 import time as _ti
 import requests as _req
 import httplib as _http
-from .utils import should_stop, _log, _exception
+from .utils import should_stop, log, exception
 import traceback
 
 class ShouldStop(Exception):
@@ -51,7 +51,7 @@ def _watch_changes_feed(adb, fd, verbose):
                 try:
                     des.post("_update/insert_with_timestamp/heartbeat_" + str(anode), params=adoc)
                 except:
-                    _exception("Heartbeat exception")
+                    exception("Heartbeat exception")
             _ti.sleep(0.1)
 
     all_threads = []
@@ -64,7 +64,7 @@ def _watch_changes_feed(adb, fd, verbose):
     ####
 
     connection_error = 0
-    if verbose: _log("Waiting for command...")
+    if verbose: log("Waiting for command...")
     while 1:
         try:
             # Get changes feed and begin thread
@@ -80,7 +80,7 @@ def _watch_changes_feed(adb, fd, verbose):
             for line in changes:
                 if line is None and should_stop(): raise ShouldStop()
                 if connection_error != 0:
-                    _log("Connection reset after {} tries".format(connection_error))
+                    log("Connection reset after {} tries".format(connection_error))
                 connection_error = 0
                 if line is None: continue
                 try:
@@ -90,7 +90,7 @@ def _watch_changes_feed(adb, fd, verbose):
 
                     label = doc["execute"]
                     args = doc.get("arguments", [])
-                    if verbose: _log("    command (%s) received" % label)
+                    if verbose: log("    command (%s) received" % label)
 
                     if type(args) != type([]):
                         raise Exception("'arguments' field must be a list")
@@ -99,17 +99,17 @@ def _watch_changes_feed(adb, fd, verbose):
                     new_th.start()
                     all_threads.append(new_th)
                 except:
-                    _exception("Unexpected exception while listening")
-                if verbose: _log("Waiting for next command...")
+                    exception("Unexpected exception while listening")
+                if verbose: log("Waiting for next command...")
         except (_req.exceptions.ChunkedEncodingError, _http.IncompleteRead):
             # Sometimes the changes feeds "stop" listening, so we can try restarting the feed
-            _log("Ignoring exception {}".format(traceback.format_exc()))
+            log("Ignoring exception {}".format(traceback.format_exc()))
             pass
         except ShouldStop:
             break
         except:
             # all other errors?
-            _log("Seen unexpected error in changes feed: {}".format(traceback.format_exc()))
+            log("Seen unexpected error in changes feed: {}".format(traceback.format_exc()))
             connection_error += 1
             _ti.sleep(1)
 
