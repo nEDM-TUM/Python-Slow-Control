@@ -35,9 +35,8 @@ def _watch_changes_feed(adb, fd, verbose):
         try:
             retVal = fd[label](*args)
             des.put(upd, params=_get_response("'%s' success" % label, retVal, True))
-        except Exception, e:
-            des.put(upd, params=_get_response("Exception: '%s'" % repr(e)))
-            pass
+        except:
+            des.put(upd, params=_get_response("Exception:\n{}".format(traceback.format_exc())))
 
     def _heartbeat_thread(thedb):
         import uuid as _uuid
