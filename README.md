@@ -19,6 +19,16 @@ or (for those installing without git on their systems)
 [sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
 ```
 
+#### Notes for the `pycurl` dependency
+
+`pynedm` depends on `pycurl`, but sometimes pip has some issues installing on Mac OS X because of 32/64-bit issues.  (For more information see [here](http://stackoverflow.com/questions/18752405/cannot-install-pycurl-on-mac-os-x-get-errors-1-and-2).)
+
+To get around this, install `pycurl` separately with the command:
+
+```
+sudo env ARCHFLAGS="-arch x86_64" pip install pycurl
+```
+
 # Example usage:
 
 ```python
