@@ -5,9 +5,11 @@ import json
 from autobahn.twisted.websocket import (WebSocketServerFactory,
                                         listenWS,
                                         WebSocketServerProtocol)
-import netifaces
 
-__all__ = [ "debug", "log", "error", "exception" ]
+__all__ = [
+  "debug", "log", "error", "exception", "listening_addresses",
+  "BroadcastLogFactory", "BroadcastLogHandler", "BroadcastLogProtocol"
+]
 
 def debug(*args):
     """
@@ -34,6 +36,9 @@ def exception(*args):
     _logger.exception(*args)
 
 class BroadcastLogProtocol(WebSocketServerProtocol):
+    """
+    Internal class to define broadcast log protocol
+    """
     def onOpen(self):
         self.factory.register(self)
 
@@ -42,6 +47,9 @@ class BroadcastLogProtocol(WebSocketServerProtocol):
         self.factory.unregister(self)
 
 class BroadcastLogFactory(WebSocketServerFactory):
+    """
+    Factory for broadcast logger
+    """
     def __init__(self, *args, **kw):
         super(BroadcastLogFactory, self).__init__(*args, **kw)
         self.clients = []
@@ -61,9 +69,20 @@ class BroadcastLogFactory(WebSocketServerFactory):
 
 
 class BroadcastLogHandler(logging.Handler):
+    """
+    Listens on 0.0.0.0 (all interfaces) and sends log messages to connected
+    clients.  Clients must connect via WebSocket and receive logging
+    information in JSON format, e.g.:
+
+        >>> { 'level' : 'INFO', 'msg' : 'A sent message' }
+
+
+    This is used in live logging of Raspberry Pis, for example in the
+    nEDM-Interface.
+    """
     def __init__(self):
         logging.Handler.__init__(self)
-        factory = BroadcastLogFactory("ws://0.0.0.0:0") 
+        factory = BroadcastLogFactory("ws://0.0.0.0:0")
         factory.protocol = BroadcastLogProtocol
         self.port = listenWS(factory).getHost()
         self.factory = factory
@@ -71,7 +90,7 @@ class BroadcastLogHandler(logging.Handler):
         # Start the reactor thread, setting daemon to True
         # (daemon = True) allows the program to normally end, which allows the
         # close function to be called, where we explicitly join the reactor
-        # thread 
+        # thread
         self._th = Thread(target=reactor.run, args=(False,))
         self._th.daemon = True
         self._th.start()
@@ -89,18 +108,25 @@ class BroadcastLogHandler(logging.Handler):
         logging.Handler.close(self)
         reactor.callFromThread(reactor.stop)
         self._th.join()
-        
+
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 _handler = BroadcastLogHandler()
 _handler.setFormatter(_formatter)
 _logger.addHandler(_handler)
+
 def listening_addresses():
+    """
+    Return external addresses where we are listening to broadcast the log:
+
+    :returns: list -- [ 'ws://x.x.x.x:y', ... ]
+    """
+    import netifaces
     port = _handler.getPort().port
     obj = [x[netifaces.AF_INET][0]['addr']
-      for x in map(netifaces.ifaddresses, netifaces.interfaces()) 
+      for x in map(netifaces.ifaddresses, netifaces.interfaces())
       if netifaces.AF_INET in x]
     obj.remove("127.0.0.1")
-    return map(lambda x: "ws://{}:{}".format(x,port), obj) 
+    return map(lambda x: "ws://{}:{}".format(x,port), obj)
 

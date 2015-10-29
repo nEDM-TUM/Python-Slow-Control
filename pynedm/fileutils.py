@@ -2,9 +2,12 @@ from cloudant.resource import Resource
 from .exception import PynEDMNoFile
 import traceback
 
+__all__ = [ "AttachmentFile" ]
+
 class AttachmentFile(Resource):
     """
-    Provides a file-like object for handling document attachments
+    Provides a file-like object for handling document attachments without
+    downloading them.
 
     Returned by :func:`pynedm.utils.ProcessObject.open_file`
     """
@@ -69,10 +72,15 @@ class AttachmentFile(Resource):
             raise PynEDMNoFile(str(e))
 
     def __enter__(self):
+        """
+        Allow 'with' calls.
+        """
         return self
 
     def __exit__(self, *args):
-        pass
+        """
+        Allow 'with' calls.
+        """
 
     def iterate(self, chunk_size):
         """
