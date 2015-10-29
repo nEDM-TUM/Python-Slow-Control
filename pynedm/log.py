@@ -7,16 +7,30 @@ from autobahn.twisted.websocket import (WebSocketServerFactory,
                                         WebSocketServerProtocol)
 import netifaces
 
+__all__ = [ "debug", "log", "error", "exception" ]
+
 def debug(*args):
+    """
+    Alias for logging.debug
+    """
     _logger.debug(*args)
 
 def log(*args):
+    """
+    Alias for logging.info
+    """
     _logger.info(*args)
 
 def error(*args):
+    """
+    Alias for logging.error
+    """
     _logger.error(*args)
 
 def exception(*args):
+    """
+    Alias for logging.exception
+    """
     _logger.exception(*args)
 
 class BroadcastLogProtocol(WebSocketServerProtocol):

@@ -1,9 +1,16 @@
 class PynEDMException(Exception):
-    pass
+    """
+    General exception for :mod:`pynedm`
+    """
 
 class CommandCollision(PynEDMException):
-    pass
+    """
+    :func:`pynedm.utils.listen` was called on a database where particular commands
+    were already being used. 
+    """
 
 class PynEDMNoFile(PynEDMException):
-	pass
+    """
+    File does not exist.	
+    """
 

@@ -6,9 +6,27 @@ from .fileutils import AttachmentFile
 from .exception import CommandCollision, PynEDMException
 from .log import (debug, log, error, exception, listening_addresses)
 
+__all__ = ["ProcessObject", "stop_listening", "should_stop", "listen", "start_process" ]
 
 _should_stop = False
 class ProcessObject(object):
+    """
+       Process object to listen for commands as well as interacting with the
+       nedm databases.
+
+       :param adb: name of database
+       :param username: username
+       :param password: password
+       :param uri: address of server
+       :param verbose: vebosity
+       :type adb: str
+       :type username: str
+       :type password: str
+       :type uri: str
+       :type verbose: bool
+
+    """
+
     def __init__(self, uri=None, username=None, password=None, adb=None, verbose=False, **kw):
         import cloudant as _ca
         self._currentInfo = {}
@@ -27,6 +45,15 @@ class ProcessObject(object):
     def write_document_to_db(self, adoc, db=None, ignoreErrors=True):
         """
         Write a document to the database.
+
+        :param adoc: dictionary to be return to the DB.
+        :param db: database name
+        :param ignoreErrors: if True, do not reraise errors
+        :type adoc: dict
+        :type db: str
+        :type ignoreErrors: bool
+        :returns: dict -- response from the server
+        :raises: :class:`pynedm.exception.PynEDMException`
         """
         try:
           if db is None:
@@ -58,29 +85,44 @@ class ProcessObject(object):
         """
         delete file associated with docid.
 
-        Return json response from server.
+        :param docid: document id
+        :param attachment_name: name of attachment
+        :param db: name of database
+        :type docid: str
+        :type attachment_name: str
+        :type db: str
+        :returns: json response from server
+
         """
         delete_url = self._attachment_path(docid, attachment_name, db)
         return self.acct.delete(delete_url).json()
 
     def open_file(self, docid, attachment_name, db=None):
         """
-		open file for reading, allows reading ranges of data. Example usage:
+        open file for reading, allows reading ranges of data.
 
-            o = ProcessObject(...)
-            _fn = "temp.out"
-            _doc = "no_exist"
-            _db = "nedm%2Fhg_laser"
+        :param docid: document id
+        :param attachment_name: name of attachment
+        :param db: name of database
+        :type docid: str
+        :type attachment_name: str
+        :type db: str
+        :returns: :class:`pynedm.fileutils.AttachmentFile` -- file-like object
 
-            x = o.open_file(_doc, _fn, db=_db)
-            y = x.read(4)
+        :Example:
 
-            print len(y), y
-
-            print x.read()
-            x.seek(1)
-            for i in x.iterate(10):
-                print i
+           >>> o = ProcessObject(...)
+           >>> _fn = "temp.out"
+           >>> _doc = "no_exist"
+           >>> _db = "nedm%2Fhg_laser"
+           >>> x = o.open_file(_doc, _fn, db=_db)
+           >>> y = x.read(4)
+           >>> print len(y), y # should be equal
+           val
+           >>> print x.read()
+           >>> x.seek(1)
+           >>> for i in x.iterate(10):
+           >>>     print i
         """
         download_url = self._attachment_path(docid, attachment_name, db)
         return AttachmentFile(self.acct[download_url])
@@ -88,22 +130,33 @@ class ProcessObject(object):
 
     def download_file(self, docid, attachment_name, db=None, chunk_size=100*1024, headers=None):
         """
-		download file associated with docid, yields the data in chunks first
-		data yielded is the total expected size, the rest is the data from the
-        file.  Example usage:
+        download file associated with docid, yields the data in chunks first
+        data yielded is the total expected size, the rest is the data from the
+        file.
 
-            from clint.textui.progress import Bar as ProgressBar
-            total_size = None
-            x = process_object.download_file("docid", "attachment", "mydb")
-            bar = ProgressBar(expected_size=x.next(), filled_char='=')
-            total = 0
-            with open("temp_file.out", "wb") as o:
-                for ch in x:
-                    total += len(ch)
-                    bar.show(total)
-                    o.write(ch)
-                    o.flush()
+        :param docid: document id
+        :param db: database name
+        :param chunk_size: size of chunks to yield
+        :param headers: HTTP headers forwarded to :mod:`requests`
+        :type docid: str
+        :type db: str
+        :type chunk_size: int
+        :type headers: dict
+        :returns: dict -- response from the server
 
+        :Example:
+
+            >>> from clint.textui.progress import Bar as ProgressBar
+            >>> total_size = None
+            >>> x = process_object.download_file("docid", "attachment", "mydb")
+            >>> bar = ProgressBar(expected_size=x.next(), filled_char='=')
+            >>> total = 0
+            >>> with open("temp_file.out", "wb") as o:
+            >>>     for ch in x:
+            >>>         total += len(ch)
+            >>>         bar.show(total)
+            >>>         o.write(ch)
+            >>>         o.flush()
         """
         download_url = self._attachment_path(docid, attachment_name, db)
         if headers is None: headers = {}
@@ -116,11 +169,16 @@ class ProcessObject(object):
         """
         Upload file associated with a particular doc id
 
-        file_or_name : full path to file or file-like object
-        docid     : id of document
-        db        : (*optional named*) name of database
-        callback  : (*optional named*) upload callback, should be of form: func(size_read, total_size)
-        attachment_name  : (*optional named*) name of attachment, otherwise name will be taken from file
+        :param file_or_name: full path to file or file-like object
+        :param docid: id of document
+        :param db: name of database
+        :param callback: upload callback, should be of form: func(size_read, total_size)
+        :param attachment_name: name of attachment, otherwise name will be taken from file
+        :type file_or_name: str or file
+        :type docid: str
+        :type db: str
+        :type callback: func(size_read, total_size)
+        :type attachment_name: str
         """
         actual_file = file_or_name
         if not hasattr(file_or_name, "read"):
@@ -132,9 +190,9 @@ class ProcessObject(object):
             raise PynEDMException("Must include attachment name for file-like objects")
 
         # Get file size
-        actual_file.seek(0, 2) 
+        actual_file.seek(0, 2)
         total_size = actual_file.tell()
-        actual_file.seek(0) 
+        actual_file.seek(0)
 
         post_to_url = self._attachment_path(docid, attachment_name, db)
 
@@ -178,7 +236,7 @@ class ProcessObject(object):
     def wait(self):
         """
         Wait until the current changes feed execution is complete.  Execution can
-        be stopped also by calling stop_listening()
+        be stopped also by calling :func:`stop_listening`
         """
         if "thread" not in self._currentInfo: return
         th = self._currentInfo["thread"]
@@ -263,7 +321,7 @@ def start_process(func, *args, **kwargs):
 
 def stop_listening(stop=True):
     """
-    Request the listening to stop.  Code blocked on wait() will proceed.
+    Request the listening to stop.  Code blocked on :func:`ProcessObject.wait` will proceed.
     """
     global _should_stop
     if not type(stop) == type(True):
@@ -272,6 +330,11 @@ def stop_listening(stop=True):
     _should_stop = stop
 
 def should_stop():
+    """
+    Returns whether or not stop has been requested.
+
+    :rtype: bool
+    """
     return _should_stop
 
 def listen(function_dict,database,username=None,
@@ -279,22 +342,39 @@ def listen(function_dict,database,username=None,
            **kw
            ):
     """
-     function_dict should look like the following:
+    Listen to database changes feed and execute commands when certain documents
+    arrive.
 
-       adict = {
-          "func_name1" : func1,
-          "func_name2" : func2,
-       }
+    :param function_dict: dictionary of functions (values) with names (keys)
+    :param database: name of database
+    :param username: username
+    :param password: password
+    :param uri: address of server
+    :param verbose: vebosity
+    :type function_dict: dict
+    :type database: str
+    :type username: str
+    :type password: str
+    :type uri: str
+    :type verbose: bool
+    :rtype: :class:`ProcessObject`
 
-       *or*, if explicitly passing in documentation strings
+    function_dict should look like the following:
 
-       adict = {
-          "func_name1" : (func1, "my doc string"),
-          "func_name2" : (func2, "my doc string for func2")
-       }
+      >>> adict = {
+      >>>    "func_name1" : func1,
+      >>>    "func_name2" : func2,
+      >>> }
 
-       where of course the names can be more creative and func1/2 should be
-       actually references to functions.
+    *or*, if explicitly passing in documentation strings
+
+      >>> adict = {
+      >>>    "func_name1" : (func1, "my doc string"),
+      >>>    "func_name2" : (func2, "my doc string for func2")
+      >>> }
+
+    where of course the names can be more creative and func1/2 should be
+    actually references to functions.
     """
 
     stop_listening(False)

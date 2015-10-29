@@ -3,6 +3,11 @@ from .exception import PynEDMNoFile
 import traceback
 
 class AttachmentFile(Resource):
+    """
+    Provides a file-like object for handling document attachments
+
+    Returned by :func:`pynedm.utils.ProcessObject.open_file`
+    """
     def __init__(self,req):
         self.req = req
         self.curr_pos = 0
@@ -15,23 +20,36 @@ class AttachmentFile(Resource):
 
     def seek(self, seekpos, whence=0):
         """
-        Seek to a position
+        Seek to a position in the file
+
+        :param seekpos: seek position
+        :type seekpos: int
+        :param whence: direction (0 - from beginning, 1 - relative to current position, 2 - from end)
+        :type seekpos: int
         """
         if whence == 1:
             seekpos += self.curr_pos
         elif whence == 2:
             seekpos = self.total_length - seekpos
-            
+
         if seekpos > self.total_length:
             seekpos = self.total_length
         self.curr_pos = seekpos
 
     def tell(self):
+        """
+        Get the current position
+
+        :returns: int - current position
+        """
         return self.curr_pos
 
     def read(self, numbytes=-1):
         """
         Read number of bytes from current position
+
+        :param numbytes: number of bytes to read (< 0 reads remaining bytes)
+        :type numbytes: int
         """
         if numbytes < 0:
             numbytes = self.total_length
@@ -59,6 +77,9 @@ class AttachmentFile(Resource):
     def iterate(self, chunk_size):
         """
         Iterates from this current position to the end of the file
+
+        :param chunk_size: number of bytes in chunk to yield
+        :type chunk_size: int
         """
         while True:
             ri = self.read(chunk_size)

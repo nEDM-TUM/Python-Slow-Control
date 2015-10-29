@@ -6,6 +6,9 @@ from .utils import should_stop, log, exception
 import traceback
 
 class ShouldStop(Exception):
+    """
+    Raised when the loop should be stopped
+    """
     pass
 
 def _watch_changes_feed(adb, fd, verbose):
