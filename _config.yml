@@ -8,5 +8,5 @@ include:
   - _static
 
 subsystems:
-  - url: /html/api
+  - url: /api/html
     title: API documentation
