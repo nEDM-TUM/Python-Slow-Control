@@ -166,7 +166,7 @@ but it is important that the function returns a value relatively quickly so
 that the web control doesn't time out.  There is an example of how to handle
 this in:
 
-examples/long_run_process.py
+[examples/long_run_process.py]({{ site.github.repository_url }}/blob/master/examples/long_run_process.py)
 
 ## Dealing with files on documents
 
