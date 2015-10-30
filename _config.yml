@@ -2,5 +2,5 @@ fierlingerwiki: https://fierlinger.wiki.tum.de/Administration+Page
 baseurl: /Python-Slow-Control
 usertitle: pynedm
 highlighter: pygments
-keep_files: [ api/html/_modules, api/html/_sources, api/html/_static ]
+include: [ api/html/_modules, api/html/_sources, api/html/_static ]
 
