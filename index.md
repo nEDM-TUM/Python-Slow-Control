@@ -14,6 +14,12 @@ and then executed in your program.
 
 For the API reference see [here](api/html).
 
+## Contents:
+
+* [Install](#installupgrade)
+* [Example usage](#example-usage)
+* [Document attachments](#dealing-with-files-on-documents)
+
 ## Install/Upgrade:
 
 {% highlight bash %}
