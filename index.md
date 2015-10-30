@@ -22,7 +22,7 @@ For the API reference see [here](api/html).
 
 #### Notes for the `pycurl` dependency
 
-`pynedm` depends on `pycurl`, but sometimes pip has some issues installing on Mac OS X because of 32/64-bit issues.  (For more information see [here](http://stackoverflow.com/questions/18752405/cannot-install-pycurl-on-mac-os-x-get-errors-1-and-2).)
+`pynedm` depends on [`pycurl`](http://pycurl.sourceforge.net/), but sometimes pip has some issues installing on Mac OS X because of 32/64-bit issues.  (For more information see [here](http://stackoverflow.com/questions/18752405/cannot-install-pycurl-on-mac-os-x-get-errors-1-and-2).)
 
 To get around this, install `pycurl` separately with the command:
 
@@ -159,8 +159,9 @@ examples/long_run_process.py
 
 ## Dealing with files on documents
 
-`pynedm.ProcessObject` has functions for dealing with files associated with documents
-in the database that are being served using https://github.com/nEDM-TUM/FileServer-Docker.
+[`pynedm.ProcessObject`](api/html/utils.html#pynedm.utils.ProcessObject) has
+functions for dealing with files associated with documents in the database that
+are being served using the [FileServer]({{ site.url }}/FileServer-Docker).
 Example usages are given:
 
 ### Uploading
