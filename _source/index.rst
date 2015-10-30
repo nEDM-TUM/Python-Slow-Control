@@ -11,6 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   Docs <http://nedm-tum.github.io/Python-Slow-Control/>
    utils
    fileutils
    log
