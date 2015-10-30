@@ -72,9 +72,9 @@ class BroadcastLogHandler(logging.Handler):
     """
     Listens on 0.0.0.0 (all interfaces) and sends log messages to connected
     clients.  Clients must connect via WebSocket and receive logging
-    information in JSON format, e.g.:
+    information in JSON format, e.g.::
 
-        >>> { 'level' : 'INFO', 'msg' : 'A sent message' }
+        { 'level' : 'INFO', 'msg' : 'A sent message' }
 
 
     This is used in live logging of Raspberry Pis, for example in the

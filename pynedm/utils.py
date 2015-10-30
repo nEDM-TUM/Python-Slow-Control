@@ -109,20 +109,20 @@ class ProcessObject(object):
         :type db: str
         :returns: :class:`pynedm.fileutils.AttachmentFile` -- file-like object
 
-        :Example:
+        Following code example::
 
-           >>> o = ProcessObject(...)
-           >>> _fn = "temp.out"
-           >>> _doc = "no_exist"
-           >>> _db = "nedm%2Fhg_laser"
-           >>> x = o.open_file(_doc, _fn, db=_db)
-           >>> y = x.read(4)
-           >>> print len(y), y # should be equal
-           val
-           >>> print x.read()
-           >>> x.seek(1)
-           >>> for i in x.iterate(10):
-           >>>     print i
+               o = ProcessObject(...)
+               _fn = "temp.out"
+               _doc = "no_exist"
+               _db = "nedm%2Fhg_laser"
+               x = o.open_file(_doc, _fn, db=_db)
+               y = x.read(4)
+               print len(y), y # should be equal
+
+               print x.read()
+               x.seek(1)
+               for i in x.iterate(10):
+                   print i
         """
         download_url = self._attachment_path(docid, attachment_name, db)
         return AttachmentFile(self.acct[download_url])
@@ -144,19 +144,19 @@ class ProcessObject(object):
         :type headers: dict
         :returns: dict -- response from the server
 
-        :Example:
+        Following code example::
 
-            >>> from clint.textui.progress import Bar as ProgressBar
-            >>> total_size = None
-            >>> x = process_object.download_file("docid", "attachment", "mydb")
-            >>> bar = ProgressBar(expected_size=x.next(), filled_char='=')
-            >>> total = 0
-            >>> with open("temp_file.out", "wb") as o:
-            >>>     for ch in x:
-            >>>         total += len(ch)
-            >>>         bar.show(total)
-            >>>         o.write(ch)
-            >>>         o.flush()
+                from clint.textui.progress import Bar as ProgressBar
+                total_size = None
+                x = process_object.download_file("docid", "attachment", "mydb")
+                bar = ProgressBar(expected_size=x.next(), filled_char='=')
+                total = 0
+                with open("temp_file.out", "wb") as o:
+                    for ch in x:
+                        total += len(ch)
+                        bar.show(total)
+                        o.write(ch)
+                        o.flush()
         """
         download_url = self._attachment_path(docid, attachment_name, db)
         if headers is None: headers = {}
@@ -359,19 +359,19 @@ def listen(function_dict,database,username=None,
     :type verbose: bool
     :rtype: :class:`ProcessObject`
 
-    function_dict should look like the following:
+    function_dict should look like the following::
 
-      >>> adict = {
-      >>>    "func_name1" : func1,
-      >>>    "func_name2" : func2,
-      >>> }
+          adict = {
+             "func_name1" : func1,
+             "func_name2" : func2,
+          }
 
-    *or*, if explicitly passing in documentation strings
+    *or*, if explicitly passing in documentation strings::
 
-      >>> adict = {
-      >>>    "func_name1" : (func1, "my doc string"),
-      >>>    "func_name2" : (func2, "my doc string for func2")
-      >>> }
+          adict = {
+             "func_name1" : (func1, "my doc string"),
+             "func_name2" : (func2, "my doc string for func2")
+          }
 
     where of course the names can be more creative and func1/2 should be
     actually references to functions.
