@@ -7,7 +7,12 @@ pynedm
 ======
 
 `pynedm` provides a python module for communicating with the slow control
-database.
+database.  There are two main functions that `pynedm` provides:
+
+* Listener - allows remote procedure calls based upon documents of a certain
+type being added to the database.
+* Writing to database/server - exports typically used functions for writing to,
+and reading from, nedm databases.
 
 Currently, one can define functions that can be exported to the Web interface
 and then executed in your program.
