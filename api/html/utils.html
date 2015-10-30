@@ -1,0 +1,343 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pynedm.utils &mdash; pynedm 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pynedm 0.2 documentation" href="index.html" />
+    <link rel="next" title="pynedm.fileutils" href="fileutils.html" />
+    <link rel="prev" title="pynedm API" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pynedm-utils">
+<h1>pynedm.utils<a class="headerlink" href="#pynedm-utils" title="Permalink to this headline">¶</a></h1>
+<p>Utility modules</p>
+<span class="target" id="module-pynedm.utils"></span><dl class="class">
+<dt id="pynedm.utils.ProcessObject">
+<em class="property">class </em><code class="descclassname">pynedm.utils.</code><code class="descname">ProcessObject</code><span class="sig-paren">(</span><em>uri=None</em>, <em>username=None</em>, <em>password=None</em>, <em>adb=None</em>, <em>verbose=False</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process object to listen for commands as well as interacting with the
+nedm databases.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>adb</strong> (<em>str</em>) &#8211; name of database</li>
+<li><strong>username</strong> (<em>str</em>) &#8211; username</li>
+<li><strong>password</strong> (<em>str</em>) &#8211; password</li>
+<li><strong>uri</strong> (<em>str</em>) &#8211; address of server</li>
+<li><strong>verbose</strong> (<em>bool</em>) &#8211; vebosity</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.delete_file">
+<code class="descname">delete_file</code><span class="sig-paren">(</span><em>docid</em>, <em>attachment_name</em>, <em>db=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.delete_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.delete_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete file associated with docid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>docid</strong> (<em>str</em>) &#8211; document id</li>
+<li><strong>attachment_name</strong> (<em>str</em>) &#8211; name of attachment</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; name of database</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">json response from server</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.download_file">
+<code class="descname">download_file</code><span class="sig-paren">(</span><em>docid</em>, <em>attachment_name</em>, <em>db=None</em>, <em>chunk_size=102400</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.download_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.download_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>download file associated with docid, yields the data in chunks first
+data yielded is the total expected size, the rest is the data from the
+file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>docid</strong> (<em>str</em>) &#8211; document id</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; database name</li>
+<li><strong>chunk_size</strong> (<em>int</em>) &#8211; size of chunks to yield</li>
+<li><strong>headers</strong> (<em>dict</em>) &#8211; HTTP headers forwarded to <code class="xref py py-mod docutils literal"><span class="pre">requests</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dict &#8211; response from the server</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Following code example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">clint.textui.progress</span> <span class="kn">import</span> <span class="n">Bar</span> <span class="k">as</span> <span class="n">ProgressBar</span>
+<span class="n">total_size</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">process_object</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span><span class="s">&quot;docid&quot;</span><span class="p">,</span> <span class="s">&quot;attachment&quot;</span><span class="p">,</span> <span class="s">&quot;mydb&quot;</span><span class="p">)</span>
+<span class="n">bar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span><span class="n">expected_size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span> <span class="n">filled_char</span><span class="o">=</span><span class="s">&#39;=&#39;</span><span class="p">)</span>
+<span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;temp_file.out&quot;</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">o</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        <span class="n">bar</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">total</span><span class="p">)</span>
+        <span class="n">o</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        <span class="n">o</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.open_file">
+<code class="descname">open_file</code><span class="sig-paren">(</span><em>docid</em>, <em>attachment_name</em>, <em>db=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.open_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.open_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>open file for reading, allows reading ranges of data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>docid</strong> (<em>str</em>) &#8211; document id</li>
+<li><strong>attachment_name</strong> (<em>str</em>) &#8211; name of attachment</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; name of database</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="fileutils.html#pynedm.fileutils.AttachmentFile" title="pynedm.fileutils.AttachmentFile"><code class="xref py py-class docutils literal"><span class="pre">pynedm.fileutils.AttachmentFile</span></code></a> &#8211; file-like object</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Following code example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">o</span> <span class="o">=</span> <span class="n">ProcessObject</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">_fn</span> <span class="o">=</span> <span class="s">&quot;temp.out&quot;</span>
+<span class="n">_doc</span> <span class="o">=</span> <span class="s">&quot;no_exist&quot;</span>
+<span class="n">_db</span> <span class="o">=</span> <span class="s">&quot;nedm</span><span class="si">%2F</span><span class="s">hg_laser&quot;</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="n">_doc</span><span class="p">,</span> <span class="n">_fn</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">_db</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">y</span> <span class="c"># should be equal</span>
+
+<span class="k">print</span> <span class="n">x</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">print</span> <span class="n">i</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.upload_file">
+<code class="descname">upload_file</code><span class="sig-paren">(</span><em>file_or_name</em>, <em>docid</em>, <em>db=None</em>, <em>attachment_name=None</em>, <em>callback=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.upload_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.upload_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload file associated with a particular doc id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_or_name</strong> (<em>str or file</em>) &#8211; full path to file or file-like object</li>
+<li><strong>docid</strong> (<em>str</em>) &#8211; id of document</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; name of database</li>
+<li><strong>callback</strong> (<em>func(size_read, total_size)</em>) &#8211; upload callback, should be of form: func(size_read, total_size)</li>
+<li><strong>attachment_name</strong> (<em>str</em>) &#8211; name of attachment, otherwise name will be taken from file</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait until the current changes feed execution is complete.  Execution can
+be stopped also by calling <a class="reference internal" href="#pynedm.utils.stop_listening" title="pynedm.utils.stop_listening"><code class="xref py py-func docutils literal"><span class="pre">stop_listening()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pynedm.utils.ProcessObject.write_document_to_db">
+<code class="descname">write_document_to_db</code><span class="sig-paren">(</span><em>adoc</em>, <em>db=None</em>, <em>ignoreErrors=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.write_document_to_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.write_document_to_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a document to the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>adoc</strong> (<em>dict</em>) &#8211; dictionary to be return to the DB.</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; database name</li>
+<li><strong>ignoreErrors</strong> (<em>bool</em>) &#8211; if True, do not reraise errors</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict &#8211; response from the server</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="exception.html#pynedm.exception.PynEDMException" title="pynedm.exception.PynEDMException"><code class="xref py py-class docutils literal"><span class="pre">pynedm.exception.PynEDMException</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pynedm.utils.stop_listening">
+<code class="descclassname">pynedm.utils.</code><code class="descname">stop_listening</code><span class="sig-paren">(</span><em>stop=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#stop_listening"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.stop_listening" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request the listening to stop.  Code blocked on <a class="reference internal" href="#pynedm.utils.ProcessObject.wait" title="pynedm.utils.ProcessObject.wait"><code class="xref py py-func docutils literal"><span class="pre">ProcessObject.wait()</span></code></a> will proceed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynedm.utils.should_stop">
+<code class="descclassname">pynedm.utils.</code><code class="descname">should_stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#should_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.should_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not stop has been requested.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynedm.utils.listen">
+<code class="descclassname">pynedm.utils.</code><code class="descname">listen</code><span class="sig-paren">(</span><em>function_dict</em>, <em>database</em>, <em>username=None</em>, <em>password=None</em>, <em>uri='http://localhost:5984'</em>, <em>verbose=False</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#listen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.listen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Listen to database changes feed and execute commands when certain documents
+arrive.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>function_dict</strong> (<em>dict</em>) &#8211; dictionary of functions (values) with names (keys)</li>
+<li><strong>database</strong> (<em>str</em>) &#8211; name of database</li>
+<li><strong>username</strong> (<em>str</em>) &#8211; username</li>
+<li><strong>password</strong> (<em>str</em>) &#8211; password</li>
+<li><strong>uri</strong> (<em>str</em>) &#8211; address of server</li>
+<li><strong>verbose</strong> (<em>bool</em>) &#8211; vebosity</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#pynedm.utils.ProcessObject" title="pynedm.utils.ProcessObject"><code class="xref py py-class docutils literal"><span class="pre">ProcessObject</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>function_dict should look like the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">adict</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s">&quot;func_name1&quot;</span> <span class="p">:</span> <span class="n">func1</span><span class="p">,</span>
+   <span class="s">&quot;func_name2&quot;</span> <span class="p">:</span> <span class="n">func2</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em>or</em>, if explicitly passing in documentation strings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">adict</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s">&quot;func_name1&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="n">func1</span><span class="p">,</span> <span class="s">&quot;my doc string&quot;</span><span class="p">),</span>
+   <span class="s">&quot;func_name2&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="n">func2</span><span class="p">,</span> <span class="s">&quot;my doc string for func2&quot;</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>where of course the names can be more creative and func1/2 should be
+actually references to functions.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">pynedm.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fileutils.html">pynedm.fileutils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="log.html">pynedm.log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exception.html">pynedm.exception</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">pynedm API</a></li>
+      <li>Next: <a href="fileutils.html" title="next chapter">pynedm.fileutils</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/utils.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Michael Marino.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/utils.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

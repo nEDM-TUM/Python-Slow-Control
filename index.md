@@ -1,5 +1,10 @@
-Python-Slow-Control
-===================
+---
+layout: basic
+title: pynedm
+---
+
+pynedm
+======
 
 `pynedm` provides a python module for communicating with the slow control
 database.
@@ -7,17 +12,13 @@ database.
 Currently, one can define functions that can be exported to the Web interface
 and then executed in your program.
 
-# Install/Upgrade:
+For the API reference see [here](api/html).
 
-```
-[sudo] pip install [--upgrade] git+https://github.com/nEDM-TUM/Python-Slow-Control#egg=pynedm
-```
+## Install/Upgrade:
 
-or (for those installing without git on their systems)
-
-```
+{% highlight bash %}
 [sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
-```
+{% endhighlight %} 
 
 #### Notes for the `pycurl` dependency
 
@@ -25,13 +26,13 @@ or (for those installing without git on their systems)
 
 To get around this, install `pycurl` separately with the command:
 
-```
+{% highlight bash %}
 sudo env ARCHFLAGS="-arch x86_64" pip install pycurl
-```
+{% endhighlight %} 
 
-# Example usage:
+## Example usage:
 
-```python
+{% highlight python %}
 import pynedm
 
 _server = "http://localhost:5984/"
@@ -73,12 +74,11 @@ o = pynedm.listen(execute_dict, _db
 
 # Wait until listening ends
 o.wait()
-
-```
+{% endhighlight %} 
 
 The above will wait and listen for documents that look like:
 
-```javascript
+{% highlight javascript %}
 {
   // ...
   "type" : "command",
@@ -86,13 +86,14 @@ The above will wait and listen for documents that look like:
   "arguments" : [] // optional
   // ...
 }
-```
+{% endhighlight %} 
+
 to be inserted into the database.  As soon as it sees a document with a
 valid key in "execute", it will run the associated function and return a
 success message back to the inserted document.  In other words, the above
 document will become:
 
-```javascript
+{% highlight javascript %}
 {
   // ...
   "type" : "command",
@@ -106,7 +107,7 @@ document will become:
   }
   // ...
 }
-```
+{% endhighlight %} 
 
 Where the message will indicate if the command was successful.
 
@@ -114,10 +115,11 @@ Stopping:
 From the command line, one may also type `CTRL-C` to nicely end the program.
 
 ###In the database
+
 Calling `pynedm.listen` inserts a document into the database of type `"export_commands"`.
 The content of this document depends upon the what was passed into `listen`:
 
-```javascript
+{% highlight javascript %}
 {
   // ...
   "type" : "export_commands",
@@ -137,7 +139,7 @@ The content of this document depends upon the what was passed into `listen`:
   }
   // ...
 }
-```
+{% endhighlight %} 
 
 
 ###Threading, etc.
@@ -163,7 +165,7 @@ Example usages are given:
 
 ### Uploading
 
-```python
+{% highlight python %}
 import pynedm
 from clint.textui.progress import Bar as ProgressBar
 import json
@@ -207,10 +209,10 @@ print("\n{}".format(json.dumps(uploading, indent=4)))
 #    }, 
 #    "id": "no_exist"
 # }
-```
+{% endhighlight %} 
 ### Downloading 
 
-```python
+{% highlight python %}
 x = o.download_file(_doc, _fn, db=_db)
 bar = ProgressBar(expected_size=x.next(), filled_char='=')
 total = 0
@@ -222,11 +224,11 @@ for i in x:
 # [================================] 20971520/20971520 - 00:00:00
 # 
 print("\n")
-```
+{% endhighlight %} 
 
 ### Open as file-like object
 
-```python
+{% highlight python %}
 x = o.open_file(_doc, _fn, db=_db)
 y = x.read(4)
 
@@ -236,11 +238,11 @@ print x.read()
 x.seek(1)
 for i in x.iterate(10):
     print i
-```
+{% endhighlight %} 
 
 ### Delete file  
 
-```python
+{% highlight python %}
 print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 # Outputs remaining attachments:
 #
@@ -249,5 +251,5 @@ print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 #    "attachments": {}, 
 #    "id": "no_exist"
 # }
-```
+{% endhighlight %} 
 
