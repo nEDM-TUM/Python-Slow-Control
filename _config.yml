@@ -6,3 +6,7 @@ include:
   - _modules
   - _sources
   - _static
+
+subsystems:
+  - url: html/api
+    title: API documentation
