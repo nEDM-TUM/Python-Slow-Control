@@ -24,12 +24,13 @@ For the API reference see [here](api/html).
 * [Install](#installupgrade)
 * [Example usage](#example-usage)
 * [Document attachments](#dealing-with-files-on-documents)
+* [Logging server](#logging-server)
 
 ## Install/Upgrade:
 
 {% highlight bash %}
 [sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
-{% endhighlight %} 
+{% endhighlight %}
 
 #### Notes for the `pycurl` dependency
 
@@ -39,7 +40,7 @@ To get around this, install `pycurl` separately with the command:
 
 {% highlight bash %}
 sudo env ARCHFLAGS="-arch x86_64" pip install pycurl
-{% endhighlight %} 
+{% endhighlight %}
 
 ## Example usage:
 
@@ -85,7 +86,7 @@ o = pynedm.listen(execute_dict, _db
 
 # Wait until listening ends
 o.wait()
-{% endhighlight %} 
+{% endhighlight %}
 
 The above will wait and listen for documents that look like:
 
@@ -97,7 +98,7 @@ The above will wait and listen for documents that look like:
   "arguments" : [] // optional
   // ...
 }
-{% endhighlight %} 
+{% endhighlight %}
 
 to be inserted into the database.  As soon as it sees a document with a
 valid key in "execute", it will run the associated function and return a
@@ -118,7 +119,7 @@ document will become:
   }
   // ...
 }
-{% endhighlight %} 
+{% endhighlight %}
 
 Where the message will indicate if the command was successful.
 
@@ -141,16 +142,21 @@ The content of this document depends upon the what was passed into `listen`:
                                              // or the second object in the tuple passed in to listen
       },
       "other_work_key" : {
-          "Info" : { 
+          "Info" : {
             "extrainfo" : 123,
             "help_msg" : "this is the help string" // This is interpreted as the help string
                                                    // Other info here way be interpreted, e.g. by the web interface.
           }
-      }      
-  }
+      }
+  },
+  "log_servers" : [
+    "ws;//x.x.x.x:aport"
+  ], // log web socket servers
   // ...
 }
-{% endhighlight %} 
+{% endhighlight %}
+
+For more information about the log web socket server, see [this section](#logging-server).
 
 
 ###Threading, etc.
@@ -184,7 +190,7 @@ import json
 
 o = pynedm.ProcessObject(uri="http://server",
   username="username",
-  password="password") 
+  password="password")
 
 bar = None
 def callback(read, total):
@@ -198,7 +204,7 @@ _doc = "no_exist"
 _db = "nedm%2Fhg_laser"
 
 uploading = o.upload_file(_fn, _doc, db=_db, callback=callback)
-# During run, outputs progress bar e.g.: 
+# During run, outputs progress bar e.g.:
 #
 # [================================] 20971520/20971520 - 00:00:00
 
@@ -206,23 +212,23 @@ print("\n{}".format(json.dumps(uploading, indent=4)))
 # Outputs:
 #
 # {
-#    "ok": true, 
+#    "ok": true,
 #    "attachments": {
 #        "temp.out": {
-#            "size": 20971520, 
-#            "ondiskname": "temp.out", 
+#            "size": 20971520,
+#            "ondiskname": "temp.out",
 #            "time": {
-#                "atime": 1438354911.5317702, 
-#                "ctime": 1438354912.698768, 
-#                "crtime": 1438354912.698768, 
+#                "atime": 1438354911.5317702,
+#                "ctime": 1438354912.698768,
+#                "crtime": 1438354912.698768,
 #                "mtime": 1438354912.691768
 #            }
 #        }
-#    }, 
+#    },
 #    "id": "no_exist"
 # }
-{% endhighlight %} 
-### Downloading 
+{% endhighlight %}
+### Downloading
 
 {% highlight python %}
 x = o.download_file(_doc, _fn, db=_db)
@@ -234,9 +240,9 @@ for i in x:
 # Outputs progress bar, e.g.:
 #
 # [================================] 20971520/20971520 - 00:00:00
-# 
+#
 print("\n")
-{% endhighlight %} 
+{% endhighlight %}
 
 ### Open as file-like object
 
@@ -250,18 +256,29 @@ print x.read()
 x.seek(1)
 for i in x.iterate(10):
     print i
-{% endhighlight %} 
+{% endhighlight %}
 
-### Delete file  
+### Delete file
 
 {% highlight python %}
 print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 # Outputs remaining attachments:
 #
 # {
-#    "ok": true, 
-#    "attachments": {}, 
+#    "ok": true,
+#    "attachments": {},
 #    "id": "no_exist"
 # }
-{% endhighlight %} 
+{% endhighlight %}
+
+## Logging Server
+
+`pynedm` provides the possibility to listen to logs using a web socket.  When
+`ProcessObject.listen` is called, it also saves the information about the log
+servers in the `export_commands` document in the database.  This can be (and is,
+in [nEDM-Interface]({{ site.url }}/nEDM-Interface)) used to get logging
+information directly from the `pynedm` process.  See
+[`BroadcastLogHandler`](api/html/log.html#pynedm.log.BroadcastLogHandler) for
+more details.
+
 
