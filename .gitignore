@@ -4,3 +4,4 @@ build*
 dist*
 test_*.py
 pynedm*
+_site
