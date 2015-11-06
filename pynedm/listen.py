@@ -14,7 +14,13 @@ class ShouldStop(Exception):
 def _watch_changes_feed(adb, fd, verbose):
     """
     _watch_changes_feed is a hidden function that performs all the work
-    watching the change feed
+    watching the change feed, it makes use of the filter function:
+
+    execute_commands/execute_commands
+
+    to ensure that it only reacts on a particular set of command keys.
+   
+    Documentation of that filter function is available `here <http://nedm-tum.github.io/nEDM-Interface/tutorial-couchdb_filter.html>`:
     """
 
     import threading as _th
