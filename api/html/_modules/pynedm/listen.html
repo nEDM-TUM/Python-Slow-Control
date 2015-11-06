@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pynedm.listen &mdash; pynedm 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pynedm 0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pynedm.listen</h1><div class="highlight"><pre>
+<span class="c"># Reset any stop listening flags</span>
+<span class="kn">import</span> <span class="nn">time</span> <span class="kn">as</span> <span class="nn">_ti</span>
+<span class="kn">import</span> <span class="nn">requests</span> <span class="kn">as</span> <span class="nn">_req</span>
+<span class="kn">import</span> <span class="nn">httplib</span> <span class="kn">as</span> <span class="nn">_http</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">should_stop</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">exception</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="k">class</span> <span class="nc">ShouldStop</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when the loop should be stopped</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="_watch_changes_feed"><a class="viewcode-back" href="../../listen.html#pynedm.listen._watch_changes_feed">[docs]</a><span class="k">def</span> <span class="nf">_watch_changes_feed</span><span class="p">(</span><span class="n">adb</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    _watch_changes_feed is a hidden function that performs all the work</span>
+<span class="sd">    watching the change feed, it makes use of the filter function:</span>
+
+<span class="sd">    execute_commands/execute_commands</span>
+
+<span class="sd">    to ensure that it only reacts on a particular set of command keys.</span>
+<span class="sd">   </span>
+<span class="sd">    Documentation of that filter function is available `here &lt;http://nedm-tum.github.io/nEDM-Interface/tutorial-couchdb_filter.html&gt;`_:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">threading</span> <span class="kn">as</span> <span class="nn">_th</span>
+
+    <span class="k">def</span> <span class="nf">_get_response</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">retVal</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ok</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         _get_response returns a dictionary with a msg and a timestamp for</span>
+<span class="sd">         insertion into the db</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ad</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;response&quot;</span> <span class="p">:</span> <span class="p">{</span>
+           <span class="s">&quot;content&quot;</span> <span class="p">:</span> <span class="n">msg</span><span class="p">,</span>
+           <span class="s">&quot;timestamp&quot;</span> <span class="p">:</span> <span class="n">_ti</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%a, </span><span class="si">%d</span><span class="s"> %b %Y %H:%M:%S +0000&quot;</span><span class="p">,</span> <span class="n">_ti</span><span class="o">.</span><span class="n">gmtime</span><span class="p">()),</span>
+           <span class="s">&quot;return&quot;</span> <span class="p">:</span> <span class="n">retVal</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">ok</span><span class="p">:</span> <span class="n">ad</span><span class="p">[</span><span class="s">&quot;response&quot;</span><span class="p">][</span><span class="s">&quot;ok&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="n">ad</span>
+
+
+    <span class="k">def</span> <span class="nf">_fire_single_thread</span><span class="p">(</span><span class="n">des</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">fd</span><span class="p">[</span><span class="n">label</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">des</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">upd</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">_get_response</span><span class="p">(</span><span class="s">&quot;&#39;</span><span class="si">%s</span><span class="s">&#39; success&quot;</span> <span class="o">%</span> <span class="n">label</span><span class="p">,</span> <span class="n">retVal</span><span class="p">,</span> <span class="bp">True</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">des</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">upd</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">_get_response</span><span class="p">(</span><span class="s">&quot;Exception:</span><span class="se">\n</span><span class="s">{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())))</span>
+
+    <span class="k">def</span> <span class="nf">_heartbeat_thread</span><span class="p">(</span><span class="n">thedb</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">uuid</span> <span class="kn">as</span> <span class="nn">_uuid</span>
+        <span class="n">anode</span> <span class="o">=</span> <span class="n">_uuid</span><span class="o">.</span><span class="n">getnode</span><span class="p">()</span>
+        <span class="n">des</span> <span class="o">=</span> <span class="n">thedb</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="s">&quot;nedm_default&quot;</span><span class="p">)</span>
+        <span class="n">adoc</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;type&quot;</span> <span class="p">:</span> <span class="s">&quot;heartbeat&quot;</span> <span class="p">}</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">_ti</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">should_stop</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">_ti</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">now</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">now</span> <span class="o">=</span> <span class="n">_ti</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">des</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&quot;_update/insert_with_timestamp/heartbeat_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">anode</span><span class="p">),</span> <span class="n">params</span><span class="o">=</span><span class="n">adoc</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">exception</span><span class="p">(</span><span class="s">&quot;Heartbeat exception&quot;</span><span class="p">)</span>
+            <span class="n">_ti</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="n">all_threads</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">des</span> <span class="o">=</span> <span class="n">adb</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="s">&quot;nedm_default&quot;</span><span class="p">)</span>
+    <span class="c"># Start Heartbeat thread</span>
+    <span class="n">heartbeat</span> <span class="o">=</span> <span class="n">_th</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_heartbeat_thread</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">adb</span><span class="p">,))</span>
+    <span class="n">heartbeat</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">all_threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">heartbeat</span><span class="p">)</span>
+    <span class="c">####</span>
+
+    <span class="n">connection_error</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="p">(</span><span class="s">&quot;Waiting for command...&quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># Get changes feed and begin thread</span>
+            <span class="k">if</span> <span class="n">should_stop</span><span class="p">():</span> <span class="k">raise</span> <span class="n">ShouldStop</span><span class="p">()</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="n">adb</span><span class="o">.</span><span class="n">changes</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">feed</span><span class="o">=</span><span class="s">&#39;continuous&#39;</span><span class="p">,</span>
+                                              <span class="n">heartbeat</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+                                              <span class="n">since</span><span class="o">=</span><span class="s">&#39;now&#39;</span><span class="p">,</span>
+                                              <span class="n">include_docs</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                              <span class="n">only_commands</span><span class="o">=</span><span class="n">fd</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                                              <span class="nb">filter</span><span class="o">=</span><span class="s">&quot;execute_commands/execute_commands&quot;</span><span class="p">),</span>
+                                <span class="n">emit_heartbeats</span><span class="o">=</span><span class="bp">True</span>
+                               <span class="p">)</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">changes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">should_stop</span><span class="p">():</span> <span class="k">raise</span> <span class="n">ShouldStop</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">connection_error</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">log</span><span class="p">(</span><span class="s">&quot;Connection reset after {} tries&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">connection_error</span><span class="p">))</span>
+                <span class="n">connection_error</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">doc</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&quot;doc&quot;</span><span class="p">]</span>
+
+                    <span class="n">upd</span> <span class="o">=</span> <span class="s">&quot;_update/insert_with_timestamp/&quot;</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="s">&quot;id&quot;</span><span class="p">]</span>
+
+                    <span class="n">label</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s">&quot;execute&quot;</span><span class="p">]</span>
+                    <span class="n">args</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;arguments&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="p">(</span><span class="s">&quot;    command (</span><span class="si">%s</span><span class="s">) received&quot;</span> <span class="o">%</span> <span class="n">label</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">([]):</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;&#39;arguments&#39; field must be a list&quot;</span><span class="p">)</span>
+
+                    <span class="n">new_th</span> <span class="o">=</span> <span class="n">_th</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_fire_single_thread</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">des</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
+                    <span class="n">new_th</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                    <span class="n">all_threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_th</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">exception</span><span class="p">(</span><span class="s">&quot;Unexpected exception while listening&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="p">(</span><span class="s">&quot;Waiting for next command...&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">_req</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ChunkedEncodingError</span><span class="p">,</span> <span class="n">_http</span><span class="o">.</span><span class="n">IncompleteRead</span><span class="p">):</span>
+            <span class="c"># Sometimes the changes feeds &quot;stop&quot; listening, so we can try restarting the feed</span>
+            <span class="n">log</span><span class="p">(</span><span class="s">&quot;Ignoring exception {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()))</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="n">ShouldStop</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c"># all other errors?</span>
+            <span class="n">log</span><span class="p">(</span><span class="s">&quot;Seen unexpected error in changes feed: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()))</span>
+            <span class="n">connection_error</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">_ti</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">should_stop</span><span class="p">():</span>
+        <span class="n">stop_listening</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">all_threads</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">th</span><span class="o">.</span><span class="n">isAlive</span><span class="p">():</span> <span class="n">th</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://nedm-tum.github.io/Python-Slow-Control/">Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">pynedm.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fileutils.html">pynedm.fileutils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../log.html">pynedm.log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exception.html">pynedm.exception</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../listen.html">pynedm.listen</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Michael Marino.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

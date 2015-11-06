@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pynedm.exception &mdash; pynedm 0.2 documentation</title>
+    <title>pynedm.listen &mdash; pynedm 0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,8 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="pynedm 0.2 documentation" href="index.html" />
-    <link rel="next" title="pynedm.listen" href="listen.html" />
-    <link rel="prev" title="pynedm.log" href="log.html" />
+    <link rel="prev" title="pynedm.exception" href="exception.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -38,26 +37,17 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="pynedm-exception">
-<h1>pynedm.exception<a class="headerlink" href="#pynedm-exception" title="Permalink to this headline">¶</a></h1>
-<p>Exceptions</p>
-<span class="target" id="module-pynedm.exception"></span><dl class="exception">
-<dt id="pynedm.exception.CommandCollision">
-<em class="property">exception </em><code class="descclassname">pynedm.exception.</code><code class="descname">CommandCollision</code><a class="reference internal" href="_modules/pynedm/exception.html#CommandCollision"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.exception.CommandCollision" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference internal" href="utils.html#pynedm.utils.listen" title="pynedm.utils.listen"><code class="xref py py-func docutils literal"><span class="pre">pynedm.utils.listen()</span></code></a> was called on a database where particular commands
-were already being used.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pynedm.exception.PynEDMException">
-<em class="property">exception </em><code class="descclassname">pynedm.exception.</code><code class="descname">PynEDMException</code><a class="reference internal" href="_modules/pynedm/exception.html#PynEDMException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.exception.PynEDMException" title="Permalink to this definition">¶</a></dt>
-<dd><p>General exception for <code class="xref py py-mod docutils literal"><span class="pre">pynedm</span></code></p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pynedm.exception.PynEDMNoFile">
-<em class="property">exception </em><code class="descclassname">pynedm.exception.</code><code class="descname">PynEDMNoFile</code><a class="reference internal" href="_modules/pynedm/exception.html#PynEDMNoFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.exception.PynEDMNoFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>File does not exist.</p>
+  <div class="section" id="pynedm-listen">
+<h1>pynedm.listen<a class="headerlink" href="#pynedm-listen" title="Permalink to this headline">¶</a></h1>
+<p>Hidden functions used when listening</p>
+<span class="target" id="module-pynedm.listen"></span><dl class="function">
+<dt id="pynedm.listen._watch_changes_feed">
+<code class="descclassname">pynedm.listen.</code><code class="descname">_watch_changes_feed</code><span class="sig-paren">(</span><em>adb</em>, <em>fd</em>, <em>verbose</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/listen.html#_watch_changes_feed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.listen._watch_changes_feed" title="Permalink to this definition">¶</a></dt>
+<dd><p>_watch_changes_feed is a hidden function that performs all the work
+watching the change feed, it makes use of the filter function:</p>
+<p>execute_commands/execute_commands</p>
+<p>to ensure that it only reacts on a particular set of command keys.</p>
+<p>Documentation of that filter function is available <a class="reference external" href="http://nedm-tum.github.io/nEDM-Interface/tutorial-couchdb_filter.html">here</a>:</p>
 </dd></dl>
 
 </div>
@@ -74,22 +64,21 @@ were already being used.</p>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">pynedm.utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fileutils.html">pynedm.fileutils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">pynedm.log</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">pynedm.exception</a></li>
-<li class="toctree-l1"><a class="reference internal" href="listen.html">pynedm.listen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exception.html">pynedm.exception</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">pynedm.listen</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="log.html" title="previous chapter">pynedm.log</a></li>
-      <li>Next: <a href="listen.html" title="next chapter">pynedm.listen</a></li>
+      <li>Previous: <a href="exception.html" title="previous chapter">pynedm.exception</a></li>
   </ul></li>
 </ul>
 </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/exception.txt"
+      <li><a href="_sources/listen.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -118,7 +107,7 @@ were already being used.</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/exception.txt"
+      <a href="_sources/listen.txt"
           rel="nofollow">Page source</a>
     </div>
 
