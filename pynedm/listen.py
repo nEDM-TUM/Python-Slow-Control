@@ -20,8 +20,7 @@ def _watch_changes_feed(adb, fd, verbose):
 
     to ensure that it only reacts on a particular set of command keys.
    
-	Documentation of that filter function is available `here
-<http://nedm-tum.github.io/nEDM-Interface/tutorial-couchdb_filter.html>`_:
+    Documentation of that filter function is available `here <http://nedm-tum.github.io/nEDM-Interface/tutorial-couchdb_filter.html>`_:
     """
 
     import threading as _th
