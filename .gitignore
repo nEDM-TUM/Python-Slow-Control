@@ -3,5 +3,4 @@ build*
 *egg-info*
 dist*
 test_*.py
-pynedm*
 _site
