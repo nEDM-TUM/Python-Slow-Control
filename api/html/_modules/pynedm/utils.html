@@ -1,0 +1,521 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pynedm.utils &mdash; pynedm 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pynedm 0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pynedm.utils</h1><div class="highlight"><pre>
+<span class="c"># Global to stop</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">.fileutils</span> <span class="kn">import</span> <span class="n">AttachmentFile</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">CommandCollision</span><span class="p">,</span> <span class="n">PynEDMException</span>
+<span class="kn">from</span> <span class="nn">.log</span> <span class="kn">import</span> <span class="p">(</span><span class="n">debug</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">exception</span><span class="p">,</span> <span class="n">listening_addresses</span><span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;ProcessObject&quot;</span><span class="p">,</span> <span class="s">&quot;stop_listening&quot;</span><span class="p">,</span> <span class="s">&quot;should_stop&quot;</span><span class="p">,</span> <span class="s">&quot;listen&quot;</span><span class="p">,</span> <span class="s">&quot;start_process&quot;</span> <span class="p">]</span>
+
+<span class="n">_should_stop</span> <span class="o">=</span> <span class="bp">False</span>
+<div class="viewcode-block" id="ProcessObject"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject">[docs]</a><span class="k">class</span> <span class="nc">ProcessObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">       Process object to listen for commands as well as interacting with the</span>
+<span class="sd">       nedm databases.</span>
+
+<span class="sd">       :param adb: name of database</span>
+<span class="sd">       :param username: username</span>
+<span class="sd">       :param password: password</span>
+<span class="sd">       :param uri: address of server</span>
+<span class="sd">       :param verbose: vebosity</span>
+<span class="sd">       :type adb: str</span>
+<span class="sd">       :type username: str</span>
+<span class="sd">       :type password: str</span>
+<span class="sd">       :type uri: str</span>
+<span class="sd">       :type verbose: bool</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">adb</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">cloudant</span> <span class="kn">as</span> <span class="nn">_ca</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">acct</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;acct&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">acct</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">acct</span> <span class="o">=</span> <span class="n">_ca</span><span class="o">.</span><span class="n">Account</span><span class="p">(</span><span class="n">uri</span><span class="o">=</span><span class="n">uri</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">username</span> <span class="ow">and</span> <span class="n">password</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">acct</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;User credentials incorrect&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isRunning</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acct</span> <span class="o">=</span> <span class="n">acct</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">adb</span>
+
+<div class="viewcode-block" id="ProcessObject.write_document_to_db"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.write_document_to_db">[docs]</a>    <span class="k">def</span> <span class="nf">write_document_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adoc</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ignoreErrors</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a document to the database.</span>
+
+<span class="sd">        :param adoc: dictionary to be return to the DB.</span>
+<span class="sd">        :param db: database name</span>
+<span class="sd">        :param ignoreErrors: if True, do not reraise errors</span>
+<span class="sd">        :type adoc: dict</span>
+<span class="sd">        :type db: str</span>
+<span class="sd">        :type ignoreErrors: bool</span>
+<span class="sd">        :returns: dict -- response from the server</span>
+<span class="sd">        :raises: :class:`pynedm.exception.PynEDMException`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">]</span>
+          <span class="k">else</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="n">db</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+          <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;Cannot write while not listening&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+          <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="s">&quot;nedm_default&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s">&quot;_update/insert_with_timestamp&quot;</span><span class="p">,</span><span class="n">params</span><span class="o">=</span><span class="n">adoc</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">ignoreErrors</span><span class="p">:</span>
+            <span class="n">log</span><span class="p">(</span><span class="s">&quot;Exception ({}) when posting doc({})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">adoc</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">{}</span>
+            <span class="k">pass</span>
+          <span class="k">else</span><span class="p">:</span> <span class="k">raise</span>
+</div>
+    <span class="k">def</span> <span class="nf">_attachment_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function to grab the attachment path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span>
+        <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;db must be defined&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="s">&#39;_attachments&#39;</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">])</span>
+
+<div class="viewcode-block" id="ProcessObject.delete_file"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.delete_file">[docs]</a>    <span class="k">def</span> <span class="nf">delete_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        delete file associated with docid.</span>
+
+<span class="sd">        :param docid: document id</span>
+<span class="sd">        :param attachment_name: name of attachment</span>
+<span class="sd">        :param db: name of database</span>
+<span class="sd">        :type docid: str</span>
+<span class="sd">        :type attachment_name: str</span>
+<span class="sd">        :type db: str</span>
+<span class="sd">        :returns: json response from server</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delete_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_path</span><span class="p">(</span><span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">delete_url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProcessObject.open_file"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.open_file">[docs]</a>    <span class="k">def</span> <span class="nf">open_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        open file for reading, allows reading ranges of data.</span>
+
+<span class="sd">        :param docid: document id</span>
+<span class="sd">        :param attachment_name: name of attachment</span>
+<span class="sd">        :param db: name of database</span>
+<span class="sd">        :type docid: str</span>
+<span class="sd">        :type attachment_name: str</span>
+<span class="sd">        :type db: str</span>
+<span class="sd">        :returns: :class:`pynedm.fileutils.AttachmentFile` -- file-like object</span>
+
+<span class="sd">        Following code example::</span>
+
+<span class="sd">               o = ProcessObject(...)</span>
+<span class="sd">               _fn = &quot;temp.out&quot;</span>
+<span class="sd">               _doc = &quot;no_exist&quot;</span>
+<span class="sd">               _db = &quot;nedm%2Fhg_laser&quot;</span>
+<span class="sd">               x = o.open_file(_doc, _fn, db=_db)</span>
+<span class="sd">               y = x.read(4)</span>
+<span class="sd">               print len(y), y # should be equal</span>
+
+<span class="sd">               print x.read()</span>
+<span class="sd">               x.seek(1)</span>
+<span class="sd">               for i in x.iterate(10):</span>
+<span class="sd">                   print i</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">download_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_path</span><span class="p">(</span><span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AttachmentFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="n">download_url</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="ProcessObject.download_file"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.download_file">[docs]</a>    <span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="mi">1024</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        download file associated with docid, yields the data in chunks first</span>
+<span class="sd">        data yielded is the total expected size, the rest is the data from the</span>
+<span class="sd">        file.</span>
+
+<span class="sd">        :param docid: document id</span>
+<span class="sd">        :param db: database name</span>
+<span class="sd">        :param chunk_size: size of chunks to yield</span>
+<span class="sd">        :param headers: HTTP headers forwarded to :mod:`requests`</span>
+<span class="sd">        :type docid: str</span>
+<span class="sd">        :type db: str</span>
+<span class="sd">        :type chunk_size: int</span>
+<span class="sd">        :type headers: dict</span>
+<span class="sd">        :returns: dict -- response from the server</span>
+
+<span class="sd">        Following code example::</span>
+
+<span class="sd">                from clint.textui.progress import Bar as ProgressBar</span>
+<span class="sd">                total_size = None</span>
+<span class="sd">                x = process_object.download_file(&quot;docid&quot;, &quot;attachment&quot;, &quot;mydb&quot;)</span>
+<span class="sd">                bar = ProgressBar(expected_size=x.next(), filled_char=&#39;=&#39;)</span>
+<span class="sd">                total = 0</span>
+<span class="sd">                with open(&quot;temp_file.out&quot;, &quot;wb&quot;) as o:</span>
+<span class="sd">                    for ch in x:</span>
+<span class="sd">                        total += len(ch)</span>
+<span class="sd">                        bar.show(total)</span>
+<span class="sd">                        o.write(ch)</span>
+<span class="sd">                        o.flush()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">download_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_path</span><span class="p">(</span><span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">download_url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;content-length&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span> <span class="k">yield</span> <span class="n">chunk</span>
+</div>
+<div class="viewcode-block" id="ProcessObject.upload_file"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.upload_file">[docs]</a>    <span class="k">def</span> <span class="nf">upload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_or_name</span><span class="p">,</span> <span class="n">docid</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">attachment_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload file associated with a particular doc id</span>
+
+<span class="sd">        :param file_or_name: full path to file or file-like object</span>
+<span class="sd">        :param docid: id of document</span>
+<span class="sd">        :param db: name of database</span>
+<span class="sd">        :param callback: upload callback, should be of form: func(size_read, total_size)</span>
+<span class="sd">        :param attachment_name: name of attachment, otherwise name will be taken from file</span>
+<span class="sd">        :type file_or_name: str or file</span>
+<span class="sd">        :type docid: str</span>
+<span class="sd">        :type db: str</span>
+<span class="sd">        :type callback: func(size_read, total_size)</span>
+<span class="sd">        :type attachment_name: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">actual_file</span> <span class="o">=</span> <span class="n">file_or_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">file_or_name</span><span class="p">,</span> <span class="s">&quot;read&quot;</span><span class="p">):</span>
+            <span class="c"># Assume it&#39;s a file-like object</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">attachment_name</span><span class="p">:</span>
+                <span class="n">attachment_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_or_name</span><span class="p">)</span>
+            <span class="n">actual_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_or_name</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">attachment_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;Must include attachment name for file-like objects&quot;</span><span class="p">)</span>
+
+        <span class="c"># Get file size</span>
+        <span class="n">actual_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">total_size</span> <span class="o">=</span> <span class="n">actual_file</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+        <span class="n">actual_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">post_to_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_path</span><span class="p">(</span><span class="n">docid</span><span class="p">,</span> <span class="n">attachment_name</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+        <span class="n">cookies</span> <span class="o">=</span> <span class="s">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;=&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+        <span class="kn">import</span> <span class="nn">pycurl</span>
+        <span class="kn">from</span> <span class="nn">StringIO</span> <span class="kn">import</span> <span class="n">StringIO</span>
+
+
+
+        <span class="k">class</span> <span class="nc">FileReader</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">callback</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fp</span> <span class="o">=</span> <span class="n">fp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">total_read</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cbck</span> <span class="o">=</span> <span class="n">callback</span>
+            <span class="k">def</span> <span class="nf">read_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">total_read</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cbck</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cbck</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_read</span><span class="p">,</span> <span class="n">total_size</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="n">pycurl</span><span class="o">.</span><span class="n">Curl</span><span class="p">()</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">URL</span><span class="p">,</span> <span class="n">post_to_url</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">PUT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">READFUNCTION</span><span class="p">,</span> <span class="n">FileReader</span><span class="p">(</span><span class="n">actual_file</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">read_callback</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">pycurl</span><span class="o">.</span><span class="n">INFILESIZE</span><span class="p">,</span> <span class="n">total_size</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">WRITEFUNCTION</span><span class="p">,</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">setopt</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">COOKIE</span><span class="p">,</span> <span class="n">cookies</span><span class="p">)</span>
+
+        <span class="n">c</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span> <span class="s">&quot;error&quot;</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span> <span class="s">&quot;content&quot;</span> <span class="p">:</span> <span class="n">content</span> <span class="p">}</span>
+
+</div>
+<div class="viewcode-block" id="ProcessObject.wait"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wait until the current changes feed execution is complete.  Execution can</span>
+<span class="sd">        be stopped also by calling :func:`stop_listening`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&quot;thread&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">:</span> <span class="k">return</span>
+        <span class="n">th</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">[</span><span class="s">&quot;thread&quot;</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">th</span><span class="o">.</span><span class="n">isAlive</span><span class="p">():</span>
+          <span class="n">th</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+          <span class="k">if</span> <span class="n">should_stop</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__remove_commands_doc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__remove_commands_doc</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">__check_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">docid</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">json</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">]</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="s">&quot;execute_commands&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&quot;export_commands&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">group_level</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">all_keys</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">x</span><span class="p">[</span><span class="s">&quot;key&quot;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s">&quot;value&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s">&quot;rows&quot;</span><span class="p">]])</span>
+        <span class="n">bad_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_keys</span> <span class="k">if</span> <span class="n">all_keys</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_keys</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">design</span><span class="p">(</span><span class="s">&quot;execute_commands&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&quot;export_commands?reduce=false&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+              <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="nb">reduce</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+              <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="n">bad_keys</span><span class="p">)))</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">url_to_use</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">uri_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;://&quot;</span> <span class="o">+</span> <span class="n">db</span><span class="o">.</span><span class="n">uri_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;/_utils/document.html?&quot;</span> <span class="o">+</span> <span class="n">db</span><span class="o">.</span><span class="n">uri_parts</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="s">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s">&quot;rows&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s">&quot;id&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">docid</span> <span class="ow">and</span> <span class="n">x</span><span class="p">[</span><span class="s">&quot;key&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">bad_keys</span><span class="p">)])</span>
+            <span class="n">conflict_str</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Key conflicts:</span><span class="se">\n</span><span class="s">{}</span><span class="se">\n\n</span><span class="s">check the following documents:</span><span class="se">\n</span><span class="s">{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bad_keys</span><span class="p">),</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">url_to_use</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">s</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">conflict_str</span> <span class="o">+=</span> <span class="s">&quot;&quot;&quot;</span>
+
+<span class="s">You have tried to use command keys that are in use!</span>
+<span class="s">&quot;&quot;&quot;</span>
+            <span class="k">raise</span> <span class="n">CommandCollision</span><span class="p">(</span><span class="n">conflict_str</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func_dic_copy</span><span class="p">,</span> <span class="n">docid</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isRunning</span><span class="p">:</span> <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isRunning</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">]</span>
+        <span class="kn">from</span> <span class="nn">.listen</span> <span class="kn">import</span> <span class="n">_watch_changes_feed</span>
+        <span class="kn">import</span> <span class="nn">threading</span> <span class="kn">as</span> <span class="nn">_th</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="s">&quot;doc_name&quot;</span><span class="p">:</span> <span class="n">docid</span><span class="p">,</span>
+          <span class="s">&quot;thread&quot;</span>  <span class="p">:</span> <span class="n">_th</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_watch_changes_feed</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">func_dic_copy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">))</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_keys</span><span class="p">(</span><span class="n">docid</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">[</span><span class="s">&quot;thread&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">[</span><span class="s">&quot;thread&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">stop_listening</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__remove_commands_doc</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__remove_commands_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">requests</span> <span class="kn">as</span> <span class="nn">_req</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&quot;doc_name&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">:</span> <span class="k">return</span>
+        <span class="n">doc_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">[</span><span class="s">&quot;doc_name&quot;</span><span class="p">]</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acct</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">]</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&quot;Removing commands doc {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc_name</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">document</span><span class="p">(</span><span class="n">doc_name</span><span class="p">)</span>
+            <span class="n">outp</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">doc</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">outp</span><span class="p">[</span><span class="s">&quot;_rev&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">_req</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">:</span>
+            <span class="n">log</span><span class="p">(</span><span class="s">&quot;Error removing document, did the server die?&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="n">PynEDMException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="p">(</span><span class="s">&quot;Unknown exception ({})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">pass</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_currentInfo</span><span class="p">[</span><span class="s">&quot;doc_name&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">stop_listening</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</div>
+<span class="k">def</span> <span class="nf">start_process</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">Queue</span> <span class="kn">as</span> <span class="nn">_q</span>
+    <span class="kn">import</span> <span class="nn">threading</span> <span class="kn">as</span> <span class="nn">_th</span>
+    <span class="k">def</span> <span class="nf">wrap_f</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">q</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+
+    <span class="n">q</span> <span class="o">=</span> <span class="n">_q</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">_th</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">wrap_f</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">q</span><span class="p">,)</span><span class="o">+</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">q</span>
+    <span class="k">return</span> <span class="n">t</span>
+
+<div class="viewcode-block" id="stop_listening"><a class="viewcode-back" href="../../utils.html#pynedm.utils.stop_listening">[docs]</a><span class="k">def</span> <span class="nf">stop_listening</span><span class="p">(</span><span class="n">stop</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Request the listening to stop.  Code blocked on :func:`ProcessObject.wait` will proceed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_should_stop</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="bp">True</span><span class="p">):</span>
+      <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;Expected bool, received (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">stop</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_should_stop</span><span class="p">:</span> <span class="n">log</span><span class="p">(</span><span class="s">&quot;Stop Requested&quot;</span><span class="p">)</span>
+    <span class="n">_should_stop</span> <span class="o">=</span> <span class="n">stop</span>
+</div>
+<div class="viewcode-block" id="should_stop"><a class="viewcode-back" href="../../utils.html#pynedm.utils.should_stop">[docs]</a><span class="k">def</span> <span class="nf">should_stop</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns whether or not stop has been requested.</span>
+
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_should_stop</span>
+</div>
+<div class="viewcode-block" id="listen"><a class="viewcode-back" href="../../utils.html#pynedm.utils.listen">[docs]</a><span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="n">function_dict</span><span class="p">,</span><span class="n">database</span><span class="p">,</span><span class="n">username</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+           <span class="n">password</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="s">&quot;http://localhost:5984&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+           <span class="o">**</span><span class="n">kw</span>
+           <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Listen to database changes feed and execute commands when certain documents</span>
+<span class="sd">    arrive.</span>
+
+<span class="sd">    :param function_dict: dictionary of functions (values) with names (keys)</span>
+<span class="sd">    :param database: name of database</span>
+<span class="sd">    :param username: username</span>
+<span class="sd">    :param password: password</span>
+<span class="sd">    :param uri: address of server</span>
+<span class="sd">    :param verbose: vebosity</span>
+<span class="sd">    :type function_dict: dict</span>
+<span class="sd">    :type database: str</span>
+<span class="sd">    :type username: str</span>
+<span class="sd">    :type password: str</span>
+<span class="sd">    :type uri: str</span>
+<span class="sd">    :type verbose: bool</span>
+<span class="sd">    :rtype: :class:`ProcessObject`</span>
+
+<span class="sd">    function_dict should look like the following::</span>
+
+<span class="sd">          adict = {</span>
+<span class="sd">             &quot;func_name1&quot; : func1,</span>
+<span class="sd">             &quot;func_name2&quot; : func2,</span>
+<span class="sd">          }</span>
+
+<span class="sd">    *or*, if explicitly passing in documentation strings::</span>
+
+<span class="sd">          adict = {</span>
+<span class="sd">             &quot;func_name1&quot; : (func1, &quot;my doc string&quot;),</span>
+<span class="sd">             &quot;func_name2&quot; : (func2, &quot;my doc string for func2&quot;)</span>
+<span class="sd">          }</span>
+
+<span class="sd">    where of course the names can be more creative and func1/2 should be</span>
+<span class="sd">    actually references to functions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">stop_listening</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+    <span class="c"># Handle interruption signals</span>
+    <span class="k">def</span> <span class="nf">_builtin_sighandler</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&quot;Handler called {}, {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">frame</span><span class="p">))</span>
+        <span class="n">stop_listening</span><span class="p">()</span>
+    <span class="kn">import</span> <span class="nn">signal</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">_builtin_sighandler</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&quot;Not handling signals&quot;</span><span class="p">)</span>
+
+    <span class="c"># Now we start with the listen function</span>
+    <span class="kn">import</span> <span class="nn">inspect</span> <span class="kn">as</span> <span class="nn">_ins</span>
+    <span class="kn">import</span> <span class="nn">pydoc</span> <span class="kn">as</span> <span class="nn">_pyd</span>
+    <span class="kn">import</span> <span class="nn">uuid</span> <span class="kn">as</span> <span class="nn">_uuid</span>
+
+    <span class="c"># Get the database information</span>
+    <span class="n">process_object</span> <span class="o">=</span> <span class="n">ProcessObject</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">database</span><span class="p">)</span>
+
+    <span class="c"># build_dictionary</span>
+    <span class="n">document</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;uuid&quot;</span> <span class="p">:</span> <span class="n">_uuid</span><span class="o">.</span><span class="n">getnode</span><span class="p">(),</span>
+                 <span class="s">&quot;type&quot;</span> <span class="p">:</span> <span class="s">&quot;export_commands&quot;</span><span class="p">,</span>
+                 <span class="s">&quot;keys&quot;</span> <span class="p">:</span> <span class="p">{},</span>
+                 <span class="s">&quot;log_servers&quot;</span> <span class="p">:</span> <span class="n">listening_addresses</span><span class="p">()</span> <span class="p">}</span>
+
+    <span class="c"># Copy function dictionary</span>
+    <span class="n">func_dic_copy</span> <span class="o">=</span> <span class="n">function_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">function_dict</span><span class="p">:</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">function_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">exp_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">_ins</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+            <span class="c"># If we just have a function, use the doc string</span>
+            <span class="n">exp_dic</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Info</span><span class="o">=</span><span class="n">_pyd</span><span class="o">.</span><span class="n">plain</span><span class="p">(</span><span class="n">_pyd</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">document</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">k</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exp_dic</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Info</span><span class="o">=</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">func_dic_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">document</span><span class="p">[</span><span class="s">&quot;keys&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp_dic</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">log</span><span class="p">(</span><span class="s">&quot;Tracking the following commands: </span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">   &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">function_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process_object</span><span class="o">.</span><span class="n">write_document_to_db</span><span class="p">(</span><span class="n">document</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s">&quot;ok&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">PynEDMException</span><span class="p">(</span><span class="s">&quot;Error seen: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+
+    <span class="n">process_object</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">func_dic_copy</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s">&quot;id&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">process_object</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="http://nedm-tum.github.io/Python-Slow-Control/">Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">pynedm.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fileutils.html">pynedm.fileutils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../log.html">pynedm.log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exception.html">pynedm.exception</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Michael Marino.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
