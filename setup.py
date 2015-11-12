@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
   name='pynedm',
-  version='0.1.0',
+  version='0.1.1',
   packages=['pynedm'],
   url='https://github.com/nEDM-TUM/Python-Slow-Control',
   author='Michael Marino',
