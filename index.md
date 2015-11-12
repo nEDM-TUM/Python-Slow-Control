@@ -29,8 +29,14 @@ For the API reference see [here](api/html).
 ## Install/Upgrade:
 
 {% highlight bash %}
-[sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+[sudo] pip install --upgrade --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
 {% endhighlight %}
+
+_Note_: the `--process-dependency-links` is currently essential to grab the
+correct `cloudant` package used by nedm.  (We use an older version of
+`cloudant` since the newer version does not provide any important updates.)
+
+Another option is to install from the `requirements.txt` file.
 
 #### Notes for the `pycurl` dependency
 
