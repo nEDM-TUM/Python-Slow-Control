@@ -117,6 +117,9 @@ _handler = None
 def use_broadcaster():
     """
     Call this function to enable the use of BroadcastLogHandler
+
+    Note, you cannot use this in a function/application that uses
+    twisted.reactor
     """
     global _handler
     if _handler: return
