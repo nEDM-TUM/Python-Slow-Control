@@ -8,7 +8,8 @@ from autobahn.twisted.websocket import (WebSocketServerFactory,
 
 __all__ = [
   "debug", "log", "error", "exception", "listening_addresses",
-  "BroadcastLogFactory", "BroadcastLogHandler", "BroadcastLogProtocol"
+  "BroadcastLogFactory", "BroadcastLogHandler", "BroadcastLogProtocol",
+  "use_broadcaster"
 ]
 
 def debug(*args):
