@@ -15,7 +15,7 @@ setup(
     'twisted'
   ],
   dependency_links=[
-    "https://github.com/nEDM-TUM/cloudant-python/tarball/nedm-version-0.5.9#egg=cloudant-0.5.9-nedm"
+    "https://github.com/nEDM-TUM/cloudant-python/tarball/nedm-version#egg=cloudant-0.5.9-nedm"
   ]
 
 )
