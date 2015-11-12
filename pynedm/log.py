@@ -112,9 +112,18 @@ class BroadcastLogHandler(logging.Handler):
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-_handler = BroadcastLogHandler()
-_handler.setFormatter(_formatter)
-_logger.addHandler(_handler)
+_handler = None
+
+def use_broadcaster():
+    """
+    Call this function to enable the use of BroadcastLogHandler
+    """
+    global _handler
+    if _handler: return
+    _handler = BroadcastLogHandler()
+    _handler.setFormatter(_formatter)
+    _logger.addHandler(_handler)
+
 
 def listening_addresses():
     """
