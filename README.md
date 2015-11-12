@@ -10,14 +10,14 @@ and then executed in your program.
 # Install/Upgrade:
 
 ```
-[sudo] pip install [--upgrade] git+https://github.com/nEDM-TUM/Python-Slow-Control#egg=pynedm
+sudo pip install --upgrade --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
 ```
 
-or (for those installing without git on their systems)
+_Note_: the `--process-dependency-links` is currently essential to grab the
+correct `cloudant` package used by nedm.  (We use an older version of
+`cloudant` since the newer version does not provide any important updates.)
 
-```
-[sudo] pip install [--upgrade] https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
-```
+Another option is to install from the `requirements.txt` file.
 
 #### Notes for the `pycurl` dependency
 
