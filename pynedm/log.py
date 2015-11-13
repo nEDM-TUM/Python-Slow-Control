@@ -113,6 +113,9 @@ class BroadcastLogHandler(logging.Handler):
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+_stream_hdlr = logging.StreamHandler()
+_stream_hdlr.setFormatter(_formatter)
+_logger.addHandler(_stream_hdlr)
 _handler = None
 
 def use_broadcaster():
