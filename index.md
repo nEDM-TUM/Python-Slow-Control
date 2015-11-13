@@ -38,6 +38,28 @@ correct `cloudant` package used by nedm.  (We use an older version of
 
 Another option is to install from the `requirements.txt` file.
 
+#### Notes for Windows
+
+Installation with [Anaconda](https://www.continuum.io/downloads) should work,
+but a few things are important.
+
+* Use a `2.7.x` version of `python`.
+* Install `txaio`:
+{% highlight bash %}
+pip install txaxio==2.0.2
+{% endhighlight %}
+* You must install Visual Studio Community to install `netifaces` [see here](https://bitbucket.org/al45tair/netifaces/issues/26/netifaces-0104-module-with-python-35).
+
+Then use the command:
+
+{% highlight bash %}
+pip install -U --no-deps --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+{% endhighlight %}
+
+Subsequent upgrades of `pynedm` should not try to upgrade the dependencies,
+this why the `--no-deps` flag is passed.
+
+
 #### Notes for the `pycurl` dependency
 
 `pynedm` depends on [`pycurl`](http://pycurl.sourceforge.net/), but sometimes pip has some issues installing on Mac OS X because of 32/64-bit issues.  (For more information see [here](http://stackoverflow.com/questions/18752405/cannot-install-pycurl-on-mac-os-x-get-errors-1-and-2).)
