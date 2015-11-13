@@ -48,9 +48,8 @@ but a few things are important.
 {% highlight bash %}
 pip install txaxio==2.0.2
 {% endhighlight %}
-* You must install Visual Studio Community to install `netifaces` [see here](https://bitbucket.org/al45tair/netifaces/issues/26/netifaces-0104-module-with-python-35).
-
-Then use the command:
+* You must install Visual Studio Community to install `netifaces`, [see here](https://bitbucket.org/al45tair/netifaces/issues/26/netifaces-0104-module-with-python-35).
+* Then use the command:
 
 {% highlight bash %}
 pip install -U --no-deps --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
