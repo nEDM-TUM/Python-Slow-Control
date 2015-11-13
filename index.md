@@ -45,6 +45,7 @@ but a few things are important.
 
 * Use a `2.7.x` version of `python`.
 * It is possible that all `pip` commands will require an administrator console.
+* You need the command `git` (this can be installed with the Visual Studio Community installer).
 * You must install Visual Studio Community to install `netifaces`, [see here](https://bitbucket.org/al45tair/netifaces/issues/26/netifaces-0104-module-with-python-35).
 * Download the [windows requirement](https://raw.githubusercontent.com/nEDM-TUM/Python-Slow-Control/master/requirements-windows.txt) file and use `pip` to install it:
 {% highlight bash %}
