@@ -14,3 +14,7 @@ class PynEDMNoFile(PynEDMException):
     File does not exist.	
     """
 
+class CommandError(PynEDMException):
+    """
+    Command not correct
+    """
