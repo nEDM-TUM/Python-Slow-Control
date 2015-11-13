@@ -277,6 +277,24 @@ print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 # }
 {% endhighlight %}
 
+### Send command
+{% highlight python %}
+print o.send_command("getvoltage", 1, db="nedm%2Finternal_coils", timeout=4000)
+# Outputs voltage, e.g. 0.00234
+
+try:
+  # Will error (not enough arguments)
+  print o.send_command("getvoltage", db="nedm%2Finternal_coils", timeout=4000)
+except:
+  traceback.print_exc()
+
+try:
+  # Will timeout (doesn't exist)
+  print o.send_command("get_voltage", db="nedm%2Finternal_coils", timeout=4000)
+except:
+  traceback.print_exc()
+{% end highlight %}
+
 ## Logging Server
 
 `pynedm` provides the possibility to listen to logs using a web socket.  When

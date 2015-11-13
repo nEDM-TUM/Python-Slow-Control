@@ -160,6 +160,58 @@ file.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pynedm.utils.ProcessObject.send_command">
+<code class="descname">send_command</code><span class="sig-paren">(</span><em>cmd_name</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.send_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.send_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send command</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cmd_name</strong> (<em>str</em>) &#8211; Name of command</li>
+<li><strong>args</strong> &#8211; arguments to command</li>
+<li><strong>db</strong> (<em>str</em>) &#8211; (optional) name of database</li>
+<li><strong>timeout</strong> (<em>int</em>) &#8211; (optional) how much time to wait, default 10000 (10 seconds)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Following code example:</p>
+<div class="highlight-python"><div class="highlight"><pre>import pynedm
+import traceback
+
+o = pynedm.ProcessObject(
+      uri=&quot;http://raid.nedm1&quot;,
+      adb=&quot;nedm%2Ftemperature_environment&quot;
+      username=&quot;admin&quot;,
+      password=&quot;pw&quot;
+      )
+
+# Gives by IP
+print o.send_command(&quot;temp-control.1.nedm1_d.ip_get&quot;)
+
+# Choosing another database, timeout.
+print o.send_command(&quot;getvoltage&quot;, 1, db=&quot;nedm%2Finternal_coils&quot;, timeout=4000)
+
+try:
+  # Will raise error (not enough arguments)
+  print o.send_command(&quot;getvoltage&quot;, db=&quot;nedm%2Finternal_coils&quot;, timeout=4000)
+except:
+  traceback.print_exc()
+
+try:
+  # Will raise timeout (command doesn&#39;t exist)
+  print o.send_command(&quot;get_voltage&quot;,
+    db=&quot;nedm%2Finternal_coils&quot;,
+    timeout=4000)
+except:
+  traceback.print_exc()
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="pynedm.utils.ProcessObject.upload_file">
 <code class="descname">upload_file</code><span class="sig-paren">(</span><em>file_or_name</em>, <em>docid</em>, <em>db=None</em>, <em>attachment_name=None</em>, <em>callback=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynedm/utils.html#ProcessObject.upload_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynedm.utils.ProcessObject.upload_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Upload file associated with a particular doc id</p>
