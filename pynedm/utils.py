@@ -234,7 +234,8 @@ class ProcessObject(object):
 
     def send_command(self, cmd_name, *args, **kwargs):
         """
-        Send command
+        Send command, raises exception if timeout or if an exception occurs in
+        remotely-called function.
 
         :param cmd_name: Name of command
         :param args: arguments to command
@@ -243,20 +244,12 @@ class ProcessObject(object):
         :type cmd_name: str
         :type db: str
         :type timeout: int
-
+        :returns: return of remotely-called function
+        :raises: :class:`pynedm.exception.CommandError`
 
         Following code example::
 
-                import pynedm
-                import traceback
-
-                o = pynedm.ProcessObject(
-                      uri="http://raid.nedm1",
-                      adb="nedm%2Ftemperature_environment"
-                      username="admin",
-                      password="pw"
-                      )
-
+                o = ProcessObject(...)
                 # Gives by IP
                 print o.send_command("temp-control.1.nedm1_d.ip_get")
 
@@ -276,9 +269,6 @@ class ProcessObject(object):
                     timeout=4000)
                 except:
                   traceback.print_exc()
-
-
-
         """
         db_name = kwargs.get("db", self.db)
         timeout = kwargs.get("timeout", 10000)
