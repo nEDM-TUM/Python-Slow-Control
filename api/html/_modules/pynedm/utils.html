@@ -274,7 +274,8 @@
 </div>
 <div class="viewcode-block" id="ProcessObject.send_command"><a class="viewcode-back" href="../../utils.html#pynedm.utils.ProcessObject.send_command">[docs]</a>    <span class="k">def</span> <span class="nf">send_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Send command</span>
+<span class="sd">        Send command, raises exception if timeout or if an exception occurs in</span>
+<span class="sd">        remotely-called function.</span>
 
 <span class="sd">        :param cmd_name: Name of command</span>
 <span class="sd">        :param args: arguments to command</span>
@@ -283,20 +284,12 @@
 <span class="sd">        :type cmd_name: str</span>
 <span class="sd">        :type db: str</span>
 <span class="sd">        :type timeout: int</span>
-
+<span class="sd">        :returns: return of remotely-called function</span>
+<span class="sd">        :raises: :class:`pynedm.exception.CommandError`</span>
 
 <span class="sd">        Following code example::</span>
 
-<span class="sd">                import pynedm</span>
-<span class="sd">                import traceback</span>
-
-<span class="sd">                o = pynedm.ProcessObject(</span>
-<span class="sd">                      uri=&quot;http://raid.nedm1&quot;,</span>
-<span class="sd">                      adb=&quot;nedm%2Ftemperature_environment&quot;</span>
-<span class="sd">                      username=&quot;admin&quot;,</span>
-<span class="sd">                      password=&quot;pw&quot;</span>
-<span class="sd">                      )</span>
-
+<span class="sd">                o = ProcessObject(...)</span>
 <span class="sd">                # Gives by IP</span>
 <span class="sd">                print o.send_command(&quot;temp-control.1.nedm1_d.ip_get&quot;)</span>
 
@@ -316,9 +309,6 @@
 <span class="sd">                    timeout=4000)</span>
 <span class="sd">                except:</span>
 <span class="sd">                  traceback.print_exc()</span>
-
-
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">db_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;db&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
         <span class="n">timeout</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
