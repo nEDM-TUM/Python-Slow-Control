@@ -326,7 +326,7 @@ def stop_listening(stop=True):
     global _should_stop
     if not type(stop) == type(True):
       raise PynEDMException("Expected bool, received (%s)" % type(stop))
-    if stop and not _should_stop: log("Stop Requested")
+    if stop and not _should_stop: debug("Stop Requested")
     _should_stop = stop
 
 def should_stop():
