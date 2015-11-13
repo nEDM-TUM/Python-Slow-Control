@@ -3,7 +3,7 @@ import logging
 import os
 import json
 from .fileutils import AttachmentFile
-from .exception import CommandCollision, PynEDMException
+from .exception import CommandCollision, PynEDMException, CommandError
 from .log import (debug, log, error, exception, listening_addresses)
 
 __all__ = ["ProcessObject", "stop_listening", "should_stop", "listen", "start_process" ]
@@ -231,6 +231,84 @@ class ProcessObject(object):
             return json.loads(content)
         except:
             return { "error" : True, "content" : content }
+
+    def send_command(self, cmd_name, *args, **kwargs):
+        """
+        Send command
+
+        :param cmd_name: Name of command
+        :param args: arguments to command
+        :param db: (optional) name of database
+        :param timeout: (optional) how much time to wait, default 10000 (10 seconds)
+        :type cmd_name: str
+        :type db: str
+        :type timeout: int
+
+
+        Following code example::
+
+                import pynedm
+                import traceback
+
+                o = pynedm.ProcessObject(
+                      uri="http://raid.nedm1",
+                      adb="nedm%2Ftemperature_environment"
+                      username="admin",
+                      password="pw"
+                      )
+
+                # Gives by IP
+                print o.send_command("temp-control.1.nedm1_d.ip_get")
+
+                # Choosing another database, timeout.
+                print o.send_command("getvoltage", 1, db="nedm%2Finternal_coils", timeout=4000)
+
+                try:
+                  # Will raise error (not enough arguments)
+                  print o.send_command("getvoltage", db="nedm%2Finternal_coils", timeout=4000)
+                except:
+                  traceback.print_exc()
+
+                try:
+                  # Will raise timeout (command doesn't exist)
+                  print o.send_command("get_voltage",
+                    db="nedm%2Finternal_coils",
+                    timeout=4000)
+                except:
+                  traceback.print_exc()
+
+
+
+        """
+        db_name = kwargs.get("db", self.db)
+        timeout = kwargs.get("timeout", 10000)
+        db = self.acct[db_name]
+
+        ret = self.write_document_to_db( {
+               "type" : "command",
+            "execute" : cmd_name,
+          "arguments" : args }, db_name, ignoreErrors=False)
+
+        if "ok" not in ret:
+            raise CommandError("Error saving document")
+
+        for l in db.changes(params=dict(
+              filter="_doc_ids",
+              timeout=timeout,
+              feed="continuous",
+              include_docs=True,
+              doc_ids=[ ret["id"] ]
+            )):
+            if 'doc' not in l: continue
+            if 'response' not in l['doc']: continue
+            resp = l['doc']['response']
+            exc = "Exception"
+            if resp["content"][:len(exc)] == exc:
+                raise CommandError(resp["content"])
+            return resp["return"]
+
+        raise CommandError("Timeout")
+
 
 
     def wait(self):
