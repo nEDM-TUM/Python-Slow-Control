@@ -44,6 +44,7 @@ Installation with [Anaconda](https://www.continuum.io/downloads) should work,
 but a few things are important.
 
 * Use a `2.7.x` version of `python`.
+* It is possible that all `pip` commands will require an administrator console.
 * Install `txaio`:
 {% highlight bash %}
 pip install txaxio==2.0.2
