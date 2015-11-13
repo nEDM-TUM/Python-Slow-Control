@@ -135,6 +135,8 @@ def listening_addresses():
 
     :returns: list -- [ 'ws://x.x.x.x:y', ... ]
     """
+    if not _handler:
+        return []
     import netifaces
     port = _handler.getPort().port
     obj = [x[netifaces.AF_INET][0]['addr']
