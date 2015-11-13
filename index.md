@@ -278,6 +278,7 @@ print(json.dumps(o.delete_file(_doc, _fn, db=_db), indent=4))
 {% endhighlight %}
 
 ### Send command
+
 {% highlight python %}
 print o.send_command("getvoltage", 1, db="nedm%2Finternal_coils", timeout=4000)
 # Outputs voltage, e.g. 0.00234
@@ -293,7 +294,7 @@ try:
   print o.send_command("get_voltage", db="nedm%2Finternal_coils", timeout=4000)
 except:
   traceback.print_exc()
-{% end highlight %}
+{% endhighlight %}
 
 ## Logging Server
 
