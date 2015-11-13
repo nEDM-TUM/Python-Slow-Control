@@ -45,24 +45,13 @@ but a few things are important.
 
 * Use a `2.7.x` version of `python`.
 * It is possible that all `pip` commands will require an administrator console.
-* Install `txaio`:
-{% highlight bash %}
-pip install txaxio==2.0.2
-{% endhighlight %}
 * You must install Visual Studio Community to install `netifaces`, [see here](https://bitbucket.org/al45tair/netifaces/issues/26/netifaces-0104-module-with-python-35).
-* Then use the command:
-
+* Download the [windows requirement](https://raw.githubusercontent.com/nEDM-TUM/Python-Slow-Control/master/requirements-windows.txt) file and use `pip` to install it:
 {% highlight bash %}
-pip install --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+pip install --upgrade -r requirements-windows.txt
 {% endhighlight %}
 
-Subsequent upgrades of `pynedm` should not try to upgrade the dependencies, and
-so should use the following command:
-
-{% highlight bash %}
-pip install -U --no-deps --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
-{% endhighlight %}
-
+Subsequent upgrades of `pynedm` should simply use the same command.
 
 #### Notes for the `pycurl` dependency
 
