@@ -53,11 +53,15 @@ pip install txaxio==2.0.2
 * Then use the command:
 
 {% highlight bash %}
-pip install -U --no-deps --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+pip install --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
 {% endhighlight %}
 
-Subsequent upgrades of `pynedm` should not try to upgrade the dependencies,
-this why the `--no-deps` flag is passed.
+Subsequent upgrades of `pynedm` should not try to upgrade the dependencies, and
+so should use the following command:
+
+{% highlight bash %}
+pip install -U --no-deps --process-dependency-links https://github.com/nEDM-TUM/Python-Slow-Control/tarball/master#egg=pynedm
+{% endhighlight %}
 
 
 #### Notes for the `pycurl` dependency
